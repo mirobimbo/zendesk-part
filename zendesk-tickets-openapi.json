@@ -1,0 +1,5354 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Support API",
+    "description": "Zendesk Support API endpoints",
+    "version": "2.0.0"
+  },
+  "tags": [
+    {
+      "name": "Tickets"
+    },
+    {
+      "name": "Ticket Metrics"
+    }
+  ],
+  "servers": [
+    {
+      "url": "https://{subdomain}.{domain}.com",
+      "variables": {
+        "domain": {
+          "default": "zendesk"
+        },
+        "subdomain": {
+          "default": "example"
+        }
+      }
+    }
+  ],
+  "paths": {
+    "/api/v2/deleted_tickets": {
+      "get": {
+        "operationId": "ListDeletedTickets",
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "List Deleted Tickets",
+        "description": "Returns a maximum of 100 deleted tickets per page. See [Pagination](/api-reference/introduction/pagination/).\n\nThe results includes all deleted (and not yet archived) tickets that\nhave not yet been [scrubbed](https://support.zendesk.com/hc/en-us/articles/4408845703194#topic_fv5_w51_sdb) in the past 30 days. Archived tickets are\nnot included in the results. See [About archived tickets](https://support.zendesk.com/hc/en-us/articles/4408887617050)\nin the Support Help Center.\n\nThe tickets are ordered chronologically by created date, from oldest to newest.\nThe first ticket listed may not be the oldest ticket in your\naccount due to [ticket archiving](https://support.zendesk.com/hc/en-us/articles/4408887617050).\n\n#### Pagination\n\n- Cursor pagination (recommended)\n- Offset pagination\n\nSee [Pagination](/api-reference/introduction/pagination/).\n\nReturns a maximum of 100 records per page.\n\n#### Allowed For\n\n* Agents\n\n#### Rate Limit\n\nYou can make 10 requests every 1 minute using this endpoint.\nWhen making requests beyond page 100, you can make 5 requests every 1 minute. These rate limits apply to both API calls and actions performed in the Admin Center.\nThe rate limiting mechanism behaves as described in\n[Monitoring your request activity](/api-reference/ticketing/account-configuration/usage_limits/#monitoring-your-request-activity) in the API introduction.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TicketSortBy"
+          },
+          {
+            "$ref": "#/components/parameters/TicketSortOrder"
+          },
+          {
+            "$ref": "#/components/parameters/TicketSupportTypeScope"
+          },
+          {
+            "$ref": "#/components/parameters/OffsetPaginationPage"
+          },
+          {
+            "$ref": "#/components/parameters/CursorPaginationPageSize"
+          },
+          {
+            "$ref": "#/components/parameters/CursorPaginationPageAfter"
+          },
+          {
+            "$ref": "#/components/parameters/CursorPaginationPageBefore"
+          },
+          {
+            "$ref": "#/components/parameters/PerPage"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListDeletedTicketsResponse"
+                },
+                "examples": {
+                  "default": {
+                    "$ref": "#/components/examples/ListDeletedTicketsResponseExample"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/deleted_tickets/{ticket_id}": {
+      "delete": {
+        "operationId": "DeleteTicketPermanently",
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "Delete Ticket Permanently",
+        "description": "Permanently deletes a soft-deleted ticket. See [Soft delete](https://support.zendesk.com/hc/en-us/articles/4408834005530#topic_zrm_wbj_1db)\nin the Zendesk GDPR docs. To soft delete a ticket, use the [Delete Ticket](#delete-ticket) endpoint.\n\nThis endpoint enqueues a ticket deletion job and returns a payload with the jobs status.\n\nIf the job succeeds, the ticket is permanently deleted. This operation can't be undone.\n\nThis endpoint returns a `job_status` [JSON object](/api-reference/ticketing/ticket-management/job_statuses/#json-format) and queues a background job to do the work.\nUse the [Show Job Status](/api-reference/ticketing/ticket-management/job_statuses/#show-job-status) endpoint to check for the job's completion.\n\n#### Allowed For\n\n* Agents",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TicketId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobStatusResponse"
+                },
+                "examples": {
+                  "default": {
+                    "$ref": "#/components/examples/PermanentlyDeleteTicketJobStatusResponseExample"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/deleted_tickets/{ticket_id}/restore": {
+      "put": {
+        "operationId": "RestoreDeletedTicket",
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "Restore a Previously Deleted Ticket",
+        "description": "#### Allowed For\n\n* Agents",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TicketId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Empty response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "description": "Empty response",
+                  "example": ""
+                },
+                "example": ""
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/deleted_tickets/destroy_many": {
+      "delete": {
+        "operationId": "BulkPermanentlyDeleteTickets",
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "Delete Multiple Tickets Permanently",
+        "description": "Permanently deletes up to 100 soft-deleted tickets. See [Soft delete](https://support.zendesk.com/hc/en-us/articles/4408834005530#topic_zrm_wbj_1db)\nin the Zendesk GDPR docs. To soft delete tickets, use the [Bulk Delete Tickets](#bulk-delete-tickets) endpoint.\n\nThis endpoint accepts a comma-separated list of up to 100 ticket ids. It enqueues\na ticket deletion job and returns a payload with the jobs status.\n\nIf one ticket fails to be deleted, the endpoint still attempts to delete the others. If the job succeeds,\nthe tickets that were successfully deleted are permanently deleted. This operation can't be undone.\n\nThis endpoint returns a `job_status` [JSON object](/api-reference/ticketing/ticket-management/job_statuses/#json-format) and queues a background job to do the work. Use the [Show Job Status](/api-reference/ticketing/ticket-management/job_statuses/#show-job-status) endpoint to check for the job's completion. Only a certain number of jobs can be queued or running at the same time. See [Job limit](/api-reference/introduction/rate-limits/#job-limit) for more information.\n\n#### Allowed For\n\n* Agents",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TicketIds"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobStatusResponse"
+                },
+                "examples": {
+                  "default": {
+                    "$ref": "#/components/examples/PermanentlyDeleteTicketJobStatusResponseExample"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/deleted_tickets/restore_many": {
+      "put": {
+        "operationId": "BulkRestoreDeletedTickets",
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "Restore Previously Deleted Tickets in Bulk",
+        "description": "#### Allowed For\n\n* Agents",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TicketIds"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Empty response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "description": "Empty response",
+                  "example": ""
+                },
+                "example": ""
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/organizations/{organization_id}/tickets": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/OrganizationId"
+        }
+      ],
+      "get": {
+        "operationId": "ListOrganizationTickets",
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "List Organization Tickets",
+        "description": "Returns a list of tickets for a specific organization.\n\n#### Pagination\n\n- Cursor pagination (recommended)\n- Offset pagination\n\nSee [Pagination](/api-reference/introduction/pagination/).\n\n#### Allowed For\n\n* Agents\n",
+        "responses": {
+          "200": {
+            "description": "List tickets",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketsResponse"
+                },
+                "examples": {
+                  "default": {
+                    "$ref": "#/components/examples/TicketsResponseExample"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/organizations/{organization_id}/tickets/count": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/OrganizationId"
+        }
+      ],
+      "get": {
+        "operationId": "CountOrganizationTickets",
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "Count Organization Tickets",
+        "description": "Returns an approximate count of tickets for a specific organization. If the count exceeds 100,000, it is updated every 24 hours.\n\nThe `count[refreshed_at]` property is a timestamp that indicates when the count was last updated.\n\n**Note**: When the count exceeds 100,000, `count[refreshed_at]` may occasionally be null.\nThis indicates that the count is being updated in the background, and `count[value]` is limited to 100,000 until the update is complete.\n\n#### Allowed For\n* Agents\n",
+        "responses": {
+          "200": {
+            "description": "Count of tickets",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "count": {
+                      "type": "object",
+                      "properties": {
+                        "refreshed_at": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "value": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                },
+                "examples": {
+                  "default": {
+                    "value": {
+                      "count": {
+                        "refreshed_at": "2020-04-06T02:18:17Z",
+                        "value": 102
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/problems": {
+      "get": {
+        "operationId": "ListTicketProblems",
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "List Ticket Problems",
+        "description": "The response is always ordered by `updated_at` in descending order\n\n#### Allowed For\n\n* Agents\n\n#### Pagination\n\n* Cursor pagination (recommended)\n* Offset pagination\n\nSee [Pagination](/api-reference/introduction/pagination/).",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/OffsetPaginationPage"
+          },
+          {
+            "$ref": "#/components/parameters/CursorPaginationPageSize"
+          },
+          {
+            "$ref": "#/components/parameters/CursorPaginationPageAfter"
+          },
+          {
+            "$ref": "#/components/parameters/CursorPaginationPageBefore"
+          },
+          {
+            "$ref": "#/components/parameters/PerPage"
+          },
+          {
+            "$ref": "#/components/parameters/CursorPaginationSort"
+          },
+          {
+            "$ref": "#/components/parameters/IncludeBoundaryIndicators"
+          },
+          {
+            "$ref": "#/components/parameters/IncludeItemCursors"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListTicketProblemsResponse"
+                },
+                "examples": {
+                  "default": {
+                    "$ref": "#/components/examples/ListTicketProblemsResponseExample"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/problems/autocomplete": {
+      "post": {
+        "operationId": "AutocompleteProblems",
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "Autocomplete Problems",
+        "description": "Returns tickets whose type is \"problem\" and whose subject contains the string specified in the `text` parameter.\n\nYou can specify the `text` parameter in the request body rather than the query string. Example:\n\n`{\"text\": \"fire\"}`\n\n#### Allowed For\n\n* Agents",
+        "parameters": [
+          {
+            "name": "text",
+            "in": "query",
+            "description": "The text to search for",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "text": {
+                    "type": "string",
+                    "description": "The text to search for"
+                  }
+                }
+              },
+              "example": {
+                "text": "fire"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListTicketProblemsResponse"
+                },
+                "examples": {
+                  "default": {
+                    "$ref": "#/components/examples/ListTicketProblemsResponseExample"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/ticket_metrics": {
+      "get": {
+        "operationId": "ListTicketMetrics",
+        "tags": [
+          "Ticket Metrics"
+        ],
+        "summary": "List Ticket Metrics",
+        "description": "Returns a list of tickets with their metrics.\n\nTickets are ordered chronologically by created date, from newest to oldest.\nThe last ticket listed may not be the absolute oldest ticket in your account\ndue to ticket archiving.\n\nArchived tickets are not included in the response. See\n[About archived tickets](https://support.zendesk.com/hc/en-us/articles/4408887617050) in\nZendesk help.\n\n#### Pagination\n\n- Cursor pagination (recommended)\n- Offset pagination\n\nSee [Pagination](/api-reference/introduction/pagination/).\n\nReturns a maximum of 100 records per page.\n\n\n#### Allowed For\n\n* Agents\n",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CursorPaginationPageSize"
+          },
+          {
+            "$ref": "#/components/parameters/CursorPaginationPageAfter"
+          },
+          {
+            "$ref": "#/components/parameters/CursorPaginationPageBefore"
+          },
+          {
+            "$ref": "#/components/parameters/CursorPaginationSort"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketMetricsResponse"
+                },
+                "examples": {
+                  "default": {
+                    "$ref": "#/components/examples/TicketMetricsResponseExample"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/ticket_metrics/{ticket_metric_id}": {
+      "get": {
+        "operationId": "ShowTicketMetrics",
+        "tags": [
+          "Ticket Metrics"
+        ],
+        "summary": "Show Ticket Metrics",
+        "description": "Returns a specific metric, or the metrics of a specific ticket.\n\n#### Pagination\n\n- Cursor pagination (recommended)\n- Offset pagination\n\nSee [Pagination](/api-reference/introduction/pagination/).\n\nReturns a maximum of 100 records per page.\n\n#### Allowed For\n\n* Agents\n",
+        "parameters": [
+          {
+            "name": "ticket_metric_id",
+            "in": "path",
+            "description": "The id of the ticket metric to retrieve",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "10001"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketMetricsByTicketMetricIdResponse"
+                },
+                "examples": {
+                  "default": {
+                    "$ref": "#/components/examples/TicketMetricResponseExample"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/tickets": {
+      "get": {
+        "operationId": "ListTickets",
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "List Tickets",
+        "parameters": [
+          {
+            "name": "external_id",
+            "in": "query",
+            "description": "Lists tickets by external id. External ids don't have to be unique for each ticket. As a result, the request may return multiple tickets with the same external id.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/TicketSortBy"
+          },
+          {
+            "$ref": "#/components/parameters/TicketSortOrder"
+          },
+          {
+            "$ref": "#/components/parameters/TicketSupportTypeScope"
+          },
+          {
+            "$ref": "#/components/parameters/OffsetPaginationPage"
+          },
+          {
+            "$ref": "#/components/parameters/CursorPaginationPageSize"
+          },
+          {
+            "$ref": "#/components/parameters/CursorPaginationPageAfter"
+          },
+          {
+            "$ref": "#/components/parameters/CursorPaginationPageBefore"
+          },
+          {
+            "$ref": "#/components/parameters/PerPage"
+          },
+          {
+            "$ref": "#/components/parameters/CursorPaginationSort"
+          },
+          {
+            "$ref": "#/components/parameters/TicketsInclude"
+          },
+          {
+            "name": "start_time",
+            "in": "query",
+            "description": "Unix epoch time to filter tickets. Only tickets created or updated after\nthis time are returned. Example: `?start_time=1332034771`\n",
+            "schema": {
+              "type": "integer"
+            },
+            "example": 1332034771
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List tickets",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketsResponse"
+                },
+                "examples": {
+                  "brand_separated": {
+                    "value": {
+                      "tickets": [
+                        {
+                          "assignee_id": 235323,
+                          "brand_id": 123,
+                          "collaborator_ids": [
+                            35334,
+                            234
+                          ],
+                          "created_at": "2009-07-20T22:55:29Z",
+                          "custom_fields": [
+                            {
+                              "id": 27642,
+                              "value": "745"
+                            },
+                            {
+                              "id": 27648,
+                              "value": "yes"
+                            }
+                          ],
+                          "custom_status_id": 123,
+                          "description": "The fire is very colorful.",
+                          "due_at": null,
+                          "external_id": "ahg35h3jh",
+                          "follower_ids": [
+                            35334,
+                            234
+                          ],
+                          "from_messaging_channel": false,
+                          "generated_timestamp": 1304553600,
+                          "group_id": 98738,
+                          "has_incidents": false,
+                          "id": 35436,
+                          "organization_id": 509974,
+                          "priority": "high",
+                          "problem_id": 9873764,
+                          "raw_subject": "{{dc.printer_on_fire}}",
+                          "recipient": "support@company.com",
+                          "requester_id": 20978392,
+                          "satisfaction_rating": {
+                            "comment": "Great support!",
+                            "id": 1234,
+                            "score": "good"
+                          },
+                          "sharing_agreement_ids": [
+                            84432
+                          ],
+                          "status": "open",
+                          "subject": "Help, my printer is on fire!",
+                          "submitter_id": 76872,
+                          "tags": [
+                            "enterprise",
+                            "other_tag"
+                          ],
+                          "type": "incident",
+                          "updated_at": "2011-05-05T10:38:52Z",
+                          "url": "https://company.zendesk.com/api/v2/tickets/35436",
+                          "via": {
+                            "channel": "web"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "default": {
+                    "$ref": "#/components/examples/TicketsResponseExample"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "CreateTicket",
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "Create Ticket",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TicketsInclude"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketCreateRequest"
+              },
+              "examples": {
+                "brand_separated": {
+                  "value": {
+                    "ticket": {
+                      "brand_id": 123,
+                      "comment": {
+                        "body": "The smoke is very colorful."
+                      },
+                      "priority": "urgent",
+                      "subject": "My printer is on fire!"
+                    }
+                  }
+                },
+                "default": {
+                  "$ref": "#/components/examples/TicketCreateRequestExample"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Create ticket",
+            "headers": {
+              "Location": {
+                "description": "The URL of the created ticket",
+                "schema": {
+                  "type": "string",
+                  "format": "uri"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketResponse"
+                },
+                "examples": {
+                  "brand_separated": {
+                    "value": {
+                      "ticket": {
+                        "assignee_id": 235323,
+                        "brand_id": 123,
+                        "collaborator_ids": [
+                          35334,
+                          234
+                        ],
+                        "created_at": "2009-07-20T22:55:29Z",
+                        "custom_fields": [
+                          {
+                            "id": 27642,
+                            "value": "745"
+                          },
+                          {
+                            "id": 27648,
+                            "value": "yes"
+                          }
+                        ],
+                        "custom_status_id": 123,
+                        "description": "The fire is very colorful.",
+                        "due_at": null,
+                        "external_id": "ahg35h3jh",
+                        "follower_ids": [
+                          35334,
+                          234
+                        ],
+                        "from_messaging_channel": false,
+                        "generated_timestamp": 1304553600,
+                        "group_id": 98738,
+                        "has_incidents": false,
+                        "id": 35436,
+                        "organization_id": 509974,
+                        "priority": "high",
+                        "problem_id": 9873764,
+                        "raw_subject": "{{dc.printer_on_fire}}",
+                        "recipient": "support@company.com",
+                        "requester_id": 20978392,
+                        "satisfaction_rating": {
+                          "comment": "Great support!",
+                          "id": 1234,
+                          "score": "good"
+                        },
+                        "sharing_agreement_ids": [
+                          84432
+                        ],
+                        "status": "open",
+                        "subject": "Help, my printer is on fire!",
+                        "submitter_id": 76872,
+                        "tags": [
+                          "enterprise",
+                          "other_tag"
+                        ],
+                        "type": "incident",
+                        "updated_at": "2011-05-05T10:38:52Z",
+                        "url": "https://company.zendesk.com/api/v2/tickets/35436",
+                        "via": {
+                          "channel": "web"
+                        }
+                      }
+                    }
+                  },
+                  "default": {
+                    "$ref": "#/components/examples/TicketResponseExample"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/tickets/{ticket_id}": {
+      "get": {
+        "operationId": "ShowTicket",
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "Show Ticket",
+        "description": "Returns a number of ticket properties, but doesn't include the full comment thread. The initial comment is available in the ticket's [description property](/api-reference/ticketing/tickets/tickets/#json-format). To retrieve all the ticket's comments, use [List Comments](/api-reference/ticketing/tickets/ticket_comments/#list-comments).\n\n#### Allowed For\n* Agents",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TicketId"
+          },
+          {
+            "$ref": "#/components/parameters/TicketsInclude"
+          },
+          {
+            "name": "reduced_payload_size",
+            "in": "query",
+            "description": "When true, returns a reduced ticket payload (omits null custom fields).",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "remove_duplicate_fields",
+            "in": "query",
+            "description": "When true, removes duplicate custom field entries from the response.",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ticket",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketResponse"
+                },
+                "examples": {
+                  "brand_separated": {
+                    "value": {
+                      "ticket": {
+                        "assignee_id": 235323,
+                        "brand_id": 123,
+                        "collaborator_ids": [
+                          35334,
+                          234
+                        ],
+                        "created_at": "2009-07-20T22:55:29Z",
+                        "custom_fields": [
+                          {
+                            "id": 27642,
+                            "value": "745"
+                          },
+                          {
+                            "id": 27648,
+                            "value": "yes"
+                          }
+                        ],
+                        "custom_status_id": 123,
+                        "description": "The fire is very colorful.",
+                        "due_at": null,
+                        "external_id": "ahg35h3jh",
+                        "follower_ids": [
+                          35334,
+                          234
+                        ],
+                        "from_messaging_channel": false,
+                        "generated_timestamp": 1304553600,
+                        "group_id": 98738,
+                        "has_incidents": false,
+                        "id": 35436,
+                        "organization_id": 509974,
+                        "priority": "high",
+                        "problem_id": 9873764,
+                        "raw_subject": "{{dc.printer_on_fire}}",
+                        "recipient": "support@company.com",
+                        "requester_id": 20978392,
+                        "satisfaction_rating": {
+                          "comment": "Great support!",
+                          "id": 1234,
+                          "score": "good"
+                        },
+                        "sharing_agreement_ids": [
+                          84432
+                        ],
+                        "status": "open",
+                        "subject": "Help, my printer is on fire!",
+                        "submitter_id": 76872,
+                        "tags": [
+                          "enterprise",
+                          "other_tag"
+                        ],
+                        "type": "incident",
+                        "updated_at": "2011-05-05T10:38:52Z",
+                        "url": "https://company.zendesk.com/api/v2/tickets/35436",
+                        "via": {
+                          "channel": "web"
+                        }
+                      }
+                    }
+                  },
+                  "default": {
+                    "$ref": "#/components/examples/TicketResponseExample"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "UpdateTicket",
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "Update Ticket",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TicketId"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketUpdateRequest"
+              },
+              "examples": {
+                "brand_separated": {
+                  "value": {
+                    "ticket": {
+                      "brand_id": 123,
+                      "comment": {
+                        "body": "Thanks for choosing Acme Jet Motors.",
+                        "public": true
+                      },
+                      "custom_status_id": 321,
+                      "status": "solved"
+                    }
+                  }
+                },
+                "default": {
+                  "$ref": "#/components/examples/TicketUpdateRequestExample"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketUpdateResponse"
+                },
+                "examples": {
+                  "brand_separated": {
+                    "value": {
+                      "audit": {
+                        "events": [
+                          {
+                            "field_name": "subject",
+                            "id": 206091192546,
+                            "type": "Create",
+                            "value": "My printer is on fire!"
+                          },
+                          {
+                            "body": "The smoke is very colorful.",
+                            "id": 206091192547,
+                            "type": "Comment"
+                          },
+                          {
+                            "field_name": "status",
+                            "id": 206091192548,
+                            "type": "Create",
+                            "value": "open"
+                          },
+                          {
+                            "field_name": "custom_status_id",
+                            "id": 206091192549,
+                            "type": "Create",
+                            "value": 123
+                          }
+                        ]
+                      },
+                      "ticket": {
+                        "brand_id": 123,
+                        "custom_status_id": 123,
+                        "id": 35436,
+                        "requester_id": 123453,
+                        "status": "open",
+                        "subject": "My printer is on fire!"
+                      }
+                    }
+                  },
+                  "default": {
+                    "$ref": "#/components/examples/TicketUpdateResponseExample"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "DeleteTicket",
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "Delete Ticket",
+        "description": "#### Allowed For\n\n* Admins\n* Agents with permission to delete tickets\n\nAgent delete permissions are set in Support. See\n[Deleting tickets](https://support.zendesk.com/hc/en-us/articles/4408883872538)\nin the Support Help Center.\n\n#### Ticket deletion rate limit\n\nYou can delete 400 tickets every 1 minute using this endpoint.\nThe rate limiting mechanism behaves as described in\n[Rate limits](/api-reference/introduction/rate-limits/) in the API introduction.\nZendesk recommends that you obey the Retry-After header values.\nTo delete many tickets, you may use [Bulk Delete Tickets](/api-reference/ticketing/tickets/tickets/#bulk-delete-tickets).",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TicketId"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No content"
+          }
+        }
+      }
+    },
+    "/api/v2/tickets/{ticket_id}/collaborators": {
+      "get": {
+        "operationId": "ListTicketCollaborators",
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "List Collaborators for a Ticket",
+        "description": "#### Allowed For\n\n* Agents",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TicketId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListTicketCollaboratorsResponse"
+                },
+                "examples": {
+                  "default": {
+                    "$ref": "#/components/examples/ListTicketCollaboratorsResponseExample"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/tickets/{ticket_id}/email_ccs": {
+      "get": {
+        "operationId": "ListTicketEmailCCs",
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "List Email CCs for a Ticket",
+        "description": "Returns any users cc'd on the ticket.\n\n#### Availability\n\nThe [CCs and Followers](https://support.zendesk.com/hc/en-us/articles/4408822451482) feature must be enabled in Zendesk Support.\n\nIf the feature is not enabled, the default CC functionality is used. In that case, use [List Collaborators](/api-reference/ticketing/tickets/tickets/#list-collaborators-for-a-ticket) to list the users cc'ed on the ticket.\n\n#### Allowed For\n\n* Agents",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TicketId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListTicketEmailCCsResponse"
+                },
+                "examples": {
+                  "default": {
+                    "$ref": "#/components/examples/ListTicketEmailCCsResponseExample"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/tickets/{ticket_id}/followers": {
+      "get": {
+        "operationId": "ListTicketFollowers",
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "List Followers for a Ticket",
+        "description": "Returns any users who follow the ticket.\n\n#### Availability\n\nThe [CCs and Followers](https://support.zendesk.com/hc/en-us/articles/4408822451482) feature must be enabled in Zendesk Support.\n\n#### Allowed For\n\n* Agents",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TicketId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListTicketFollowersResponse"
+                },
+                "examples": {
+                  "default": {
+                    "$ref": "#/components/examples/ListTicketFollowersResponseExample"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/tickets/{ticket_id}/group_slas/policy_metrics": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/TicketId"
+        }
+      ],
+      "get": {
+        "operationId": "ListTicketGroupSlaPolicyMetrics",
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "List Ticket Group SLA Policy Metrics",
+        "description": "Returns the Group SLA (OLA) policy metrics for a specific ticket.\n\n#### Availability\n\n* Accounts on the Enterprise plan\n\n#### Allowed For\n\n* Admins\n",
+        "responses": {
+          "200": {
+            "description": "Success response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "policy_metrics": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "breach_at": {
+                            "type": "string",
+                            "format": "date-time",
+                            "nullable": true
+                          },
+                          "days": {
+                            "type": "integer"
+                          },
+                          "hours": {
+                            "type": "integer"
+                          },
+                          "metric": {
+                            "type": "string"
+                          },
+                          "minutes": {
+                            "type": "integer"
+                          },
+                          "stage": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "examples": {
+                  "default": {
+                    "value": {
+                      "policy_metrics": [
+                        {
+                          "breach_at": "2023-01-19T02:14:27+00:00",
+                          "metric": "group_ownership_time",
+                          "minutes": -19,
+                          "stage": "active"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/tickets/{ticket_id}/incidents": {
+      "get": {
+        "operationId": "ListTicketIncidents",
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "List Ticket Incidents",
+        "description": "#### Allowed For\n\n* Agents\n\n#### Pagination\n* Cursor pagination (recommended)\n* Offset pagination\n\nSee [Pagination](/api-reference/introduction/pagination/).",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TicketId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListTicketIncidentsResponse"
+                },
+                "examples": {
+                  "default": {
+                    "$ref": "#/components/examples/ListTicketIncidentsResponseExample"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/tickets/{ticket_id}/mark_as_spam": {
+      "put": {
+        "operationId": "MarkTicketAsSpamAndSuspendRequester",
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "Mark Ticket as Spam and Suspend Requester",
+        "description": "#### Allowed For\n\n* Agents",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TicketId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "example": ""
+                },
+                "example": ""
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/tickets/{ticket_id}/merge": {
+      "post": {
+        "operationId": "MergeTicketsIntoTargetTicket",
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "Merge Tickets into Target Ticket",
+        "description": "Merges one or more tickets into the ticket with the specified id.\n\nSee [Merging tickets](https://support.zendesk.com/hc/en-us/articles/4408882445594)\nin the Support Help Center for ticket merging rules.\n\nAny attachment to the source ticket is copied to the target ticket.\n\nThis endpoint returns a `job_status` [JSON object](/api-reference/ticketing/ticket-management/job_statuses/#json-format) and queues a background job to do the work. Use the [Show Job Status](/api-reference/ticketing/ticket-management/job_statuses/#show-job-status) endpoint to check for the job's completion. Only a certain number of jobs can be queued or running at the same time. See [Job limit](/api-reference/introduction/rate-limits/#job-limit) for more information.\n\n#### Allowed For\n\n* Agents\n\nAgents in the Enterprise account must have merge permissions.\nSee [Creating custom roles and assigning agents](https://support.zendesk.com/hc/en-us/articles/4408882153882) in Zendesk help.\n\n#### Available parameters\n\nThe request takes a data object with the following properties:\n\n| Name                     | Type    | Required | Comments                                                |\n| ------------------------ | ------- | -------- | ------------------------------------------------------- |\n| ids                      | array   | yes      | Ids of tickets to merge into the target ticket          |\n| target_comment           | string  | no       | Private comment to add to the target ticket. This comment is optional but strongly recommended |\n| source_comment           | string  | no       | Private comment to add to the source ticket. This comment is optional but strongly recommended |\n| target_comment_is_public | boolean | no       | Whether comments in the target ticket are public or private   |\n| source_comment_is_public | boolean | no       | Whether comments in the source tickets are public or private |\n\n`target_comment` and `source_comment` can be used to provide a reason for the merge for recordkeeping purposes. If the source ticket has attachments, they are included in `target_comment`.\n\nComments are private and can't be modified in the following cases:\n\n  * Any of the sources or target tickets are private\n  * Any of the sources or target tickets were created through X (formerly Twitter), Facebook or the Channel framework\n\nIn any other case, comments default to private but can be modified with the comment privacy parameters.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TicketId"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketMergeInput"
+              },
+              "examples": {
+                "default": {
+                  "$ref": "#/components/examples/TicketMergeInputExample"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobStatusResponse"
+                },
+                "examples": {
+                  "default": {
+                    "$ref": "#/components/examples/JobStatusResponseExample"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/tickets/{ticket_id}/metric_events": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/TicketId"
+        }
+      ],
+      "get": {
+        "operationId": "ListTicketMetricEventsByTicket",
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "List Ticket Metric Events by Ticket",
+        "description": "Lists the ticket metric events for a specific ticket. Returns a sorted list by\nmetric instance, grouped by metric name.\n\n#### Allowed For\n\n* Admins, Agents\n",
+        "responses": {
+          "200": {
+            "description": "Success response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "items": {
+                      "properties": {
+                        "id": {
+                          "format": "int64",
+                          "type": "integer"
+                        },
+                        "instance_id": {
+                          "format": "int64",
+                          "type": "integer"
+                        },
+                        "metric": {
+                          "type": "string"
+                        },
+                        "ticket_id": {
+                          "format": "int64",
+                          "type": "integer"
+                        },
+                        "time": {
+                          "format": "date-time",
+                          "type": "string"
+                        },
+                        "type": {
+                          "type": "string"
+                        }
+                      },
+                      "type": "object"
+                    },
+                    "type": "array"
+                  }
+                },
+                "examples": {
+                  "default": {
+                    "value": {
+                      "reply_time": [
+                        {
+                          "id": 4398080142847,
+                          "instance_id": 0,
+                          "metric": "reply_time",
+                          "ticket_id": 2,
+                          "time": "2023-09-22T02:11:55Z",
+                          "type": "measure"
+                        },
+                        {
+                          "id": 4398080142975,
+                          "instance_id": 1,
+                          "metric": "reply_time",
+                          "ticket_id": 2,
+                          "time": "2023-09-22T02:11:55Z",
+                          "type": "fulfill"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/tickets/{ticket_id}/metrics": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/TicketId"
+        }
+      ],
+      "get": {
+        "operationId": "ShowTicketMetricsByTicket",
+        "tags": [
+          "Ticket Metrics",
+          "Tickets"
+        ],
+        "summary": "Show Ticket Metrics By Ticket",
+        "description": "Returns the metrics for a specific ticket.\n\n#### Allowed For\n\n* Agents\n",
+        "responses": {
+          "200": {
+            "description": "Success response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketMetricsByTicketMetricIdResponse"
+                },
+                "examples": {
+                  "default": {
+                    "$ref": "#/components/examples/TicketMetricResponseExample"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/tickets/{ticket_id}/related": {
+      "get": {
+        "operationId": "TicketRelatedInformation",
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "Ticket Related Information",
+        "description": "The request returns a data object with the following properties:\n\n| Name                | Type    | Comment\n| ------------------- | ------- | -------\n| topic_id            | string  | Related topic in the Web portal (deprecated feature)\n| jira_issue_ids      | array   | Array of associated jira issues\n| followup_source_ids | array   | Sources to follow up\n| from_archive        | boolean | Is true if the current ticket is archived\n| incidents           | integer | A count of related incident occurrences\n\n#### Allowed For\n\n* Agents",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TicketId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketRelatedInformation"
+                },
+                "examples": {
+                  "default": {
+                    "$ref": "#/components/examples/TicketRelatedInformationExample"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/tickets/{ticket_id}/skips": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/TicketId"
+        },
+        {
+          "$ref": "#/components/parameters/TicketSortOrder"
+        }
+      ],
+      "get": {
+        "operationId": "ListTicketSkipsByTicket",
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "List Ticket Skips By Ticket",
+        "description": "Returns the skips for a specific ticket.\n\nArchived tickets are not included in the response. See\n[About archived tickets](https://support.zendesk.com/hc/en-us/articles/4408887617050) in\nthe Support Help Center.\n\n#### Pagination\n\n- Cursor pagination (recommended)\n- Offset pagination\n\nSee [Pagination](/api-reference/introduction/pagination/).\n\nReturns a maximum of 100 records per page.\n\n#### Allowed For\n* Agents with \"View only\" or higher reports permissions in Support.\n  These permissions are distinct from Explore permissions.\n* Agents retrieving their own skips\n",
+        "responses": {
+          "200": {
+            "description": "Success response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketSkipsResponse"
+                },
+                "examples": {
+                  "default": {
+                    "$ref": "#/components/examples/TicketSkipResponseExample"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/tickets/{ticket_id}/slas/policy_metrics": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/TicketId"
+        }
+      ],
+      "get": {
+        "operationId": "ListTicketSlaPolicyMetrics",
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "List Ticket SLA Policy Metrics",
+        "description": "Returns the SLA policy metrics for a specific ticket.\n\n#### Availability\n\n* Accounts on the Enterprise plan\n\n#### Allowed For\n\n* Admins\n",
+        "responses": {
+          "200": {
+            "description": "Success response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "policy_metrics": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "breach_at": {
+                            "type": "string",
+                            "format": "date-time",
+                            "nullable": true
+                          },
+                          "days": {
+                            "type": "integer"
+                          },
+                          "hours": {
+                            "type": "integer"
+                          },
+                          "metric": {
+                            "type": "string"
+                          },
+                          "minutes": {
+                            "type": "integer"
+                          },
+                          "stage": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "examples": {
+                  "default": {
+                    "value": {
+                      "policy_metrics": [
+                        {
+                          "breach_at": "2023-01-19T02:14:27+00:00",
+                          "metric": "first_reply_time",
+                          "minutes": -19,
+                          "stage": "active"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/tickets/autocomplete": {
+      "get": {
+        "operationId": "AutocompleteTickets",
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "Autocomplete Tickets",
+        "description": "Returns tickets whose subject matches the value specified in the `name`\nparameter.\n\n#### Allowed For\n\n* Agents",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "query",
+            "description": "The text used to match ticket subjects.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "printer"
+          },
+          {
+            "$ref": "#/components/parameters/TicketSupportTypeScope"
+          },
+          {
+            "$ref": "#/components/parameters/LookupRelationshipAutocompleteFieldIdFragment"
+          },
+          {
+            "$ref": "#/components/parameters/LookupRelationshipAutocompleteSourceFragment"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketsResponse"
+                },
+                "examples": {
+                  "default": {
+                    "$ref": "#/components/examples/TicketsResponseExample"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/tickets/count": {
+      "get": {
+        "operationId": "CountTickets",
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "Count Tickets",
+        "description": "Returns an approximate count of tickets in the account. If the count exceeds 100,000, it is updated every 24 hours.\n\n`ccd` lists tickets that the specified user is cc'd on.\n\nThe `count[refreshed_at]` property is a timestamp that indicates when the count was last updated.\n\n**Note**: When the count exceeds 100,000, `count[refreshed_at]` may occasionally be null.\nThis indicates that the count is being updated in the background, and `count[value]` is limited to 100,000 until the update is complete.\n\n#### Allowed For\n* Agents",
+        "responses": {
+          "200": {
+            "description": "Count of tickets",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "count": {
+                      "type": "object",
+                      "properties": {
+                        "refreshed_at": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "value": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                },
+                "examples": {
+                  "default": {
+                    "value": {
+                      "count": {
+                        "refreshed_at": "2020-04-06T02:18:17Z",
+                        "value": 102
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/tickets/create_many": {
+      "post": {
+        "operationId": "TicketsCreateMany",
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "Create Many Tickets",
+        "description": "Accepts an array of up to 100 ticket objects. **Note**: Every ticket created with this endpoint may be affected by your business rules, which can include sending email notifications to your end users. If you are importing historical tickets or creating more than 1000 tickets, consider using the [Ticket Bulk Import](/api-reference/ticketing/tickets/ticket_import/#ticket-bulk-import) endpoint.\n\nThis endpoint returns a `job_status` [JSON object](/api-reference/ticketing/ticket-management/job_statuses/#json-format) and queues a background job to do the work. Use the [Show Job Status](/api-reference/ticketing/ticket-management/job_statuses/#show-job-status) endpoint to check for the job's completion. Only a certain number of jobs can be queued or running at the same time. See [Job limit](/api-reference/introduction/rate-limits/#job-limit) for more information.\n\n#### Allowed For\n* Agents",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketsCreateRequest"
+              },
+              "examples": {
+                "default": {
+                  "$ref": "#/components/examples/TicketsCreateRequestExample"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Create many tickets",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobStatusResponse"
+                },
+                "examples": {
+                  "default": {
+                    "$ref": "#/components/examples/JobStatusResponseExample"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/tickets/destroy_many": {
+      "delete": {
+        "operationId": "BulkDeleteTickets",
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "Bulk Delete Tickets",
+        "description": "Accepts a comma-separated list of up to 100 ticket ids.\n\n#### Allowed For\n\n* Admins\n* Agents with permission to delete tickets\n\nAgent delete permissions are set in Support. See\n[Deleting tickets](https://support.zendesk.com/hc/en-us/articles/4408883872538)\nin the Support Help Center.\n\nThis endpoint returns a `job_status` [JSON object](/api-reference/ticketing/ticket-management/job_statuses/#json-format) and queues a background job to do the work. Use the [Show Job Status](/api-reference/ticketing/ticket-management/job_statuses/#show-job-status) endpoint to check for the job's completion. Only a certain number of jobs can be queued or running at the same time. See [Job limit](/api-reference/introduction/rate-limits/#job-limit) for more information.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TicketIds"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobStatusResponse"
+                },
+                "examples": {
+                  "default": {
+                    "$ref": "#/components/examples/JobStatusResponseExample"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/tickets/mark_many_as_spam": {
+      "put": {
+        "operationId": "MarkManyTicketsAsSpam",
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "Bulk Mark Tickets as Spam",
+        "description": "Accepts a comma-separated list of up to 100 ticket ids.\n\nThis endpoint returns a `job_status` [JSON object](/api-reference/ticketing/ticket-management/job_statuses/#json-format) and queues a background job to do the work. Use the [Show Job Status](/api-reference/ticketing/ticket-management/job_statuses/#show-job-status) endpoint to check for the job's completion. Only a certain number of jobs can be queued or running at the same time. See [Job limit](/api-reference/introduction/rate-limits/#job-limit) for more information.\n\n#### Allowed For\n\n* Agents",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TicketIds"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobStatusResponse"
+                },
+                "examples": {
+                  "default": {
+                    "$ref": "#/components/examples/JobStatusResponseExample"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/tickets/messaging/conversations/{conversation_id}/ticket": {
+      "get": {
+        "operationId": "ShowTicketByMessagingConversationId",
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "Show Ticket by Messaging Conversation ID",
+        "description": "Returns the active ticket associated with the given Sunshine Conversations conversation id.\n\nA ticket is considered active when it's open and the messaging session is still in progress.\nA ticket becomes inactive when any of the following occur:\n\n* The ticket is closed\n* An agent ends the messaging session\n* A trigger ends the messaging session\n\n#### Allowed For\n* Agents with the `view_private_content` permission",
+        "parameters": [
+          {
+            "name": "conversation_id",
+            "in": "path",
+            "description": "The id of the Sunshine Conversations conversation.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "f82db38d3dbf67fe2d1e1233"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ticket",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketResponse"
+                },
+                "examples": {
+                  "default": {
+                    "$ref": "#/components/examples/TicketResponseExample"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No active ticket found for the given conversation ID"
+          }
+        }
+      }
+    },
+    "/api/v2/tickets/recent": {
+      "get": {
+        "operationId": "ListRecentTickets",
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "List Recent Tickets",
+        "description": "Lists up to five tickets that the requesting agent recently viewed or created in the agent interface.\n\n#### Allowed For\n* Agents",
+        "responses": {
+          "200": {
+            "description": "List recently viewed tickets",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketsResponse"
+                },
+                "examples": {
+                  "default": {
+                    "$ref": "#/components/examples/TicketsResponseExample"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/tickets/show_many": {
+      "get": {
+        "operationId": "TicketsShowMany",
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "Show Multiple Tickets",
+        "description": "Accepts a comma-separated list of ticket ids to return.\n\nThis endpoint will return up to 100 tickets records.\n\n#### Allowed For\n* Agents",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TicketIds"
+          },
+          {
+            "name": "include",
+            "in": "query",
+            "description": "A comma-separated list of sideloads to include.\n",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List tickets",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketsResponse"
+                },
+                "examples": {
+                  "default": {
+                    "$ref": "#/components/examples/TicketsResponseExample"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/tickets/update_many": {
+      "put": {
+        "operationId": "TicketsUpdateMany",
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "Update Many Tickets",
+        "description": "Accepts an array of up to 100 ticket objects, or a comma-separated list of up to 100 ticket ids.",
+        "parameters": [
+          {
+            "name": "ids",
+            "in": "query",
+            "description": "Comma-separated list of ticket ids",
+            "schema": {
+              "type": "string"
+            },
+            "example": "35436,35437"
+          }
+        ],
+        "requestBody": {
+          "description": "Ticket object for bulk updates (with ids query parameter) or array of ticket objects for batch updates",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketsUpdateRequest"
+              },
+              "examples": {
+                "batch_update": {
+                  "$ref": "#/components/examples/TicketsUpdateRequestBatchUpdateExample"
+                },
+                "bulk_update_tags": {
+                  "$ref": "#/components/examples/TicketsUpdateRequestBulkUpdateTagsExample"
+                },
+                "default": {
+                  "$ref": "#/components/examples/TicketsUpdateRequestDefaultExample"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobStatusResponse"
+                },
+                "examples": {
+                  "default": {
+                    "$ref": "#/components/examples/JobStatusResponseExample"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/users/{user_id}/tickets/assigned": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/UserId"
+        }
+      ],
+      "get": {
+        "operationId": "ListUserAssignedTickets",
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "List User Assigned Tickets",
+        "description": "Lists tickets assigned to the specified user.",
+        "responses": {
+          "200": {
+            "description": "List tickets assigned to the user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketsResponse"
+                },
+                "examples": {
+                  "default": {
+                    "$ref": "#/components/examples/TicketsResponseExample"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/users/{user_id}/tickets/assigned/count": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/UserId"
+        }
+      ],
+      "get": {
+        "operationId": "CountUserAssignedTickets",
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "Count User Assigned Tickets",
+        "description": "Returns an approximate count of tickets assigned to the specified user. If the count exceeds 100,000, it is updated every 24 hours.\n\nThe `count[refreshed_at]` property is a timestamp that indicates when the count was last updated.\n\n**Note**: When the count exceeds 100,000, `count[refreshed_at]` may occasionally be null.\nThis indicates that the count is being updated in the background, and `count[value]` is limited to 100,000 until the update is complete.\n\n#### Allowed For\n* Agents",
+        "responses": {
+          "200": {
+            "description": "Count of tickets",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "count": {
+                      "type": "object",
+                      "properties": {
+                        "refreshed_at": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "value": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                },
+                "examples": {
+                  "default": {
+                    "value": {
+                      "count": {
+                        "refreshed_at": "2020-04-06T02:18:17Z",
+                        "value": 102
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/users/{user_id}/tickets/ccd": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/UserId"
+        }
+      ],
+      "get": {
+        "operationId": "ListUserCCDTickets",
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "List User CCD Tickets",
+        "description": "Lists tickets where the specified user is CC'd.",
+        "responses": {
+          "200": {
+            "description": "List tickets where the user is CC'd",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketsResponse"
+                },
+                "examples": {
+                  "default": {
+                    "$ref": "#/components/examples/TicketsResponseExample"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/users/{user_id}/tickets/ccd/count": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/UserId"
+        }
+      ],
+      "get": {
+        "operationId": "CountUserCCDTickets",
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "Count User CCD Tickets",
+        "description": "Returns an approximate count of tickets where the specified user is CC'd. If the count exceeds 100,000, it is updated every 24 hours.\n\nThe `count[refreshed_at]` property is a timestamp that indicates when the count was last updated.\n\n**Note**: When the count exceeds 100,000, `count[refreshed_at]` may occasionally be null.\nThis indicates that the count is being updated in the background, and `count[value]` is limited to 100,000 until the update is complete.\n\n#### Allowed For\n* Agents",
+        "responses": {
+          "200": {
+            "description": "Count of tickets",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "count": {
+                      "type": "object",
+                      "properties": {
+                        "refreshed_at": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "value": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                },
+                "examples": {
+                  "default": {
+                    "value": {
+                      "count": {
+                        "refreshed_at": "2020-04-06T02:18:17Z",
+                        "value": 102
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/users/{user_id}/tickets/followed": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/UserId"
+        }
+      ],
+      "get": {
+        "operationId": "ListUserFollowedTickets",
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "List User Followed Tickets",
+        "description": "Lists tickets the specified user is following.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TicketSortBy"
+          },
+          {
+            "$ref": "#/components/parameters/TicketSortOrder"
+          },
+          {
+            "$ref": "#/components/parameters/OffsetPaginationPage"
+          },
+          {
+            "$ref": "#/components/parameters/CursorPaginationPageSize"
+          },
+          {
+            "$ref": "#/components/parameters/CursorPaginationPageAfter"
+          },
+          {
+            "$ref": "#/components/parameters/CursorPaginationPageBefore"
+          },
+          {
+            "$ref": "#/components/parameters/PerPage"
+          },
+          {
+            "name": "exclude_archived",
+            "in": "query",
+            "description": "If true, excludes archived tickets from the results.\n",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List tickets followed by the user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketsResponse"
+                },
+                "examples": {
+                  "default": {
+                    "$ref": "#/components/examples/TicketsResponseExample"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/users/{user_id}/tickets/requested": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/UserId"
+        }
+      ],
+      "get": {
+        "operationId": "ListUserRequestedTickets",
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "List User Requested Tickets",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TicketSortBy"
+          },
+          {
+            "$ref": "#/components/parameters/TicketSortOrder"
+          },
+          {
+            "$ref": "#/components/parameters/OffsetPaginationPage"
+          },
+          {
+            "$ref": "#/components/parameters/CursorPaginationPageSize"
+          },
+          {
+            "$ref": "#/components/parameters/CursorPaginationPageAfter"
+          },
+          {
+            "$ref": "#/components/parameters/CursorPaginationPageBefore"
+          },
+          {
+            "$ref": "#/components/parameters/PerPage"
+          },
+          {
+            "$ref": "#/components/parameters/TicketsInclude"
+          },
+          {
+            "name": "exclude_archived",
+            "in": "query",
+            "description": "If true, excludes archived tickets from the results.\n",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "exclude_count",
+            "in": "query",
+            "description": "If true, excludes the total count from the results.\n",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List tickets requested by the user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketsResponse"
+                },
+                "examples": {
+                  "default": {
+                    "$ref": "#/components/examples/TicketsResponseExample"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AttachmentBaseObject": {
+        "type": "object",
+        "properties": {
+          "content_type": {
+            "type": "string",
+            "description": "The content type of the image. Example value: \"image/png\"",
+            "readOnly": true
+          },
+          "content_url": {
+            "type": "string",
+            "description": "A full URL where the attachment image file can be downloaded. The file may be hosted externally so take care not to inadvertently send Zendesk authentication credentials. See [Working with url properties](/documentation/api-basics/best-practices/working-with-url-properties/)",
+            "readOnly": true
+          },
+          "deleted": {
+            "type": "boolean",
+            "description": "If true, the attachment has been deleted",
+            "readOnly": true
+          },
+          "file_name": {
+            "type": "string",
+            "description": "The name of the image file",
+            "readOnly": true
+          },
+          "height": {
+            "type": "integer",
+            "description": "The height of the image file in pixels. If height is unknown, returns null",
+            "readOnly": true
+          },
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Automatically assigned when created",
+            "readOnly": true
+          },
+          "inline": {
+            "type": "boolean",
+            "description": "If true, the attachment is excluded from the attachment list and the attachment's URL\ncan be referenced within the comment of a ticket. Default is false\n",
+            "readOnly": true
+          },
+          "malware_access_override": {
+            "type": "boolean",
+            "description": "If true, you can download an attachment flagged as malware. If false, you can't download such an attachment.",
+            "readOnly": true
+          },
+          "malware_scan_result": {
+            "type": "string",
+            "description": "The result of the malware scan. There is a delay between the time the attachment is uploaded and when the malware scan is completed. Usually the scan is done within a few seconds, but high load conditions can delay the scan results. Possible values: \"malware_found\", \"malware_not_found\", \"failed_to_scan\", \"not_scanned\"",
+            "readOnly": true
+          },
+          "mapped_content_url": {
+            "type": "string",
+            "description": "The URL the attachment image file has been mapped to",
+            "readOnly": true
+          },
+          "size": {
+            "type": "integer",
+            "description": "The size of the image file in bytes",
+            "readOnly": true
+          },
+          "url": {
+            "type": "string",
+            "description": "A URL to access the attachment details",
+            "readOnly": true
+          },
+          "width": {
+            "type": "integer",
+            "description": "The width of the image file in pixels. If width is unknown, returns null",
+            "readOnly": true
+          }
+        }
+      },
+      "AttachmentObject": {
+        "type": "object",
+        "description": "A file represented as an [Attachment](/api-reference/ticketing/tickets/ticket-attachments/) object",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/AttachmentBaseObject"
+          },
+          {
+            "$ref": "#/components/schemas/AttachmentThumbnails"
+          }
+        ],
+        "example": {
+          "content_type": "image/png",
+          "content_url": "https://company.zendesk.com/attachments/my_funny_profile_pic.png",
+          "file_name": "my_funny_profile_pic.png",
+          "id": 928374,
+          "size": 166144,
+          "thumbnails": [
+            {
+              "content_type": "image/png",
+              "content_url": "https://company.zendesk.com/attachments/my_funny_profile_pic_thumb.png",
+              "file_name": "my_funny_profile_pic_thumb.png",
+              "id": 928375,
+              "size": 58298
+            }
+          ]
+        }
+      },
+      "AttachmentThumbnails": {
+        "type": "object",
+        "properties": {
+          "thumbnails": {
+            "type": "array",
+            "description": "An array of attachment objects. Note that photo thumbnails do not have thumbnails",
+            "items": {
+              "$ref": "#/components/schemas/AttachmentBaseObject"
+            },
+            "readOnly": true
+          }
+        }
+      },
+      "AuditObject": {
+        "type": "object",
+        "properties": {
+          "author_id": {
+            "type": "integer",
+            "format": "int64",
+            "readOnly": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "body": {
+                  "type": "string",
+                  "readOnly": true
+                },
+                "field_name": {
+                  "type": "string",
+                  "readOnly": true
+                },
+                "id": {
+                  "type": "integer",
+                  "format": "int64",
+                  "readOnly": true
+                },
+                "type": {
+                  "type": "string",
+                  "readOnly": true
+                },
+                "value": {
+                  "oneOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "integer"
+                    }
+                  ]
+                }
+              }
+            },
+            "readOnly": true
+          },
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "readOnly": true
+          },
+          "metadata": {
+            "type": "object",
+            "readOnly": true
+          },
+          "ticket_id": {
+            "type": "integer",
+            "format": "int64",
+            "readOnly": true
+          },
+          "via": {
+            "$ref": "#/components/schemas/ViaObject"
+          }
+        }
+      },
+      "CollaboratorObject": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "example": {
+          "email": "someone@example.com",
+          "name": "Someone Special"
+        }
+      },
+      "CreateResourceResult": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "the id of the new resource"
+          },
+          "index": {
+            "type": "integer",
+            "description": "the index number of the resul"
+          }
+        },
+        "required": [
+          "id",
+          "index"
+        ]
+      },
+      "EmailCCObject": {
+        "type": "object",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/FollowerObject"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "action": {
+                "type": "string",
+                "enum": [
+                  "put",
+                  "delete"
+                ]
+              },
+              "user_email": {
+                "type": "string"
+              },
+              "user_id": {
+                "type": "integer",
+                "format": "int64"
+              },
+              "user_name": {
+                "type": "string"
+              }
+            }
+          }
+        ]
+      },
+      "FailedResult": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "description": "The action the job attempted (`\"action\": \"update\"`)"
+          },
+          "details": {
+            "type": "string",
+            "description": "The details of the error"
+          },
+          "error": {
+            "type": "string",
+            "description": "The error message"
+          },
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The id of the resource the job attempted to update"
+          },
+          "success": {
+            "type": "boolean",
+            "description": "Whether the action was successful or not (`\"success\": true`)"
+          }
+        },
+        "required": [
+          "id",
+          "action",
+          "error",
+          "success",
+          "details"
+        ]
+      },
+      "FollowerObject": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "put",
+              "delete"
+            ]
+          },
+          "user_email": {
+            "type": "string",
+            "format": "email"
+          },
+          "user_id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "user_name": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "JobStatusObject": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Automatically assigned when the job is queued",
+            "readOnly": true
+          },
+          "job_type": {
+            "type": "string",
+            "description": "The type of the job",
+            "readOnly": true
+          },
+          "message": {
+            "type": "string",
+            "description": "Message from the job worker, if any",
+            "nullable": true,
+            "readOnly": true
+          },
+          "progress": {
+            "type": "integer",
+            "description": "Number of tasks that have already been completed",
+            "nullable": true,
+            "readOnly": true
+          },
+          "results": {
+            "description": "Result data from processed tasks. See [Results](#results) below",
+            "oneOf": [
+              {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/JobStatusResultObject"
+                },
+                "nullable": true
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "success": {
+                    "type": "boolean",
+                    "description": "Whether the action was successful or not",
+                    "readOnly": true
+                  }
+                },
+                "required": [
+                  "success"
+                ]
+              }
+            ],
+            "readOnly": true
+          },
+          "status": {
+            "type": "string",
+            "description": "The current status. One of the following: \"queued\", \"working\", \"failed\", \"completed\"",
+            "readOnly": true
+          },
+          "total": {
+            "type": "integer",
+            "description": "The total number of tasks this job is batching through",
+            "nullable": true,
+            "readOnly": true
+          },
+          "url": {
+            "type": "string",
+            "description": "The URL to poll for status updates",
+            "readOnly": true
+          }
+        },
+        "example": {
+          "id": "82de0b044094f0c67893ac9fe64f1a99",
+          "message": "Completed at 2018-03-08 10:07:04 +0000",
+          "progress": 2,
+          "results": [
+            {
+              "action": "update",
+              "id": 244,
+              "status": "Updated",
+              "success": true
+            },
+            {
+              "action": "update",
+              "id": 245,
+              "status": "Updated",
+              "success": true
+            }
+          ],
+          "status": "completed",
+          "total": 2,
+          "url": "https://example.zendesk.com/api/v2/job_statuses/82de0b0467893ac9fe64f1a99"
+        }
+      },
+      "JobStatusResponse": {
+        "type": "object",
+        "properties": {
+          "job_status": {
+            "$ref": "#/components/schemas/JobStatusObject"
+          }
+        }
+      },
+      "JobStatusResultObject": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/CreateResourceResult"
+          },
+          {
+            "$ref": "#/components/schemas/UpdateResourceResult"
+          },
+          {
+            "$ref": "#/components/schemas/FailedResult"
+          }
+        ],
+        "additionalProperties": true
+      },
+      "ListDeletedTicketsResponse": {
+        "type": "object",
+        "allOf": [
+          {
+            "type": "object",
+            "properties": {
+              "deleted_tickets": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "actor": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "integer",
+                          "format": "int64"
+                        },
+                        "name": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "deleted_at": {
+                      "type": "string"
+                    },
+                    "id": {
+                      "type": "integer",
+                      "format": "int64"
+                    },
+                    "previous_state": {
+                      "type": "string"
+                    },
+                    "subject": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "$ref": "#/components/schemas/OffsetPaginationObject"
+          }
+        ]
+      },
+      "ListTicketCollaboratorsResponse": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "ListTicketEmailCCsResponse": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "ListTicketFollowersResponse": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "ListTicketIncidentsResponse": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "ListTicketProblemsResponse": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "OffsetPaginationObject": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "integer",
+            "description": "the total record count"
+          },
+          "next_page": {
+            "type": "string",
+            "format": "uri",
+            "description": "the URL of the next page",
+            "nullable": true
+          },
+          "previous_page": {
+            "type": "string",
+            "format": "uri",
+            "description": "the URL of the previous page",
+            "nullable": true
+          }
+        }
+      },
+      "SharingAgreementInput": {
+        "type": "object",
+        "description": "A sharing agreement configuration to apply to a ticket",
+        "properties": {
+          "custom_fields": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TicketFieldValueInput"
+            }
+          },
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The ID of the sharing agreement"
+          }
+        }
+      },
+      "TicketAuditViaObject": {
+        "type": "object",
+        "description": "Describes how the object was created. See the [Via object reference](/documentation/ticketing/reference-guides/via-object-reference)",
+        "properties": {
+          "channel": {
+            "type": "string",
+            "description": "This tells you how the ticket or event was created. Examples: \"web\", \"mobile\", \"rule\", \"system\"",
+            "readOnly": true
+          },
+          "source": {
+            "type": "object",
+            "description": "For some channels a source object gives more information about how or why the ticket or event was created",
+            "additionalProperties": true,
+            "readOnly": true
+          }
+        }
+      },
+      "TicketCommentObject": {
+        "type": "object",
+        "properties": {
+          "add_short_url": {
+            "type": "boolean",
+            "description": "Internal flag for adding short URLs to the comment"
+          },
+          "attachments": {
+            "type": "array",
+            "description": "Attachments, if any. See [Attachment](/api-reference/ticketing/tickets/ticket-attachments/)",
+            "items": {
+              "$ref": "#/components/schemas/AttachmentObject"
+            },
+            "readOnly": true
+          },
+          "audit_id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The id of the ticket audit record. See [Show Audit](/api-reference/ticketing/tickets/ticket_audits/#show-audit)",
+            "readOnly": true
+          },
+          "author_id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The id of the comment author. If null or omitted on create, defaults to the authenticated user. See [Author id](#author-id)",
+            "nullable": true
+          },
+          "body": {
+            "type": "string",
+            "description": "The comment string. See [Bodies](#bodies)"
+          },
+          "channel_back": {
+            "type": "string",
+            "description": "Internal channel back identifier for the comment"
+          },
+          "channel_source_id": {
+            "type": "string",
+            "description": "Internal channel source identifier for the comment",
+            "nullable": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The time the comment was created",
+            "readOnly": true
+          },
+          "html_body": {
+            "type": "string",
+            "description": "The comment formatted as HTML. See [Bodies](#bodies)"
+          },
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Automatically assigned when the comment is created",
+            "readOnly": true
+          },
+          "metadata": {
+            "type": "object",
+            "description": "System information (web client, IP address, etc.) and comment flags, if any. See [Comment flags](#comment-flags)",
+            "additionalProperties": true,
+            "readOnly": true
+          },
+          "plain_body": {
+            "type": "string",
+            "description": "The comment presented as plain text. See [Bodies](#bodies)",
+            "readOnly": true
+          },
+          "public": {
+            "type": "boolean",
+            "description": "true if a public comment; false if an internal note. The initial value set on ticket creation persists for any additional comment unless you change it"
+          },
+          "translate_to": {
+            "type": "string",
+            "description": "The locale code to translate the comment body to.",
+            "nullable": true
+          },
+          "type": {
+            "type": "string",
+            "description": "`Comment` or `VoiceComment`. The JSON object for adding voice comments to tickets is different. See [Adding voice comments to tickets](/documentation/ticketing/managing-tickets/adding-voice-comments-to-tickets)",
+            "readOnly": true
+          },
+          "uploads": {
+            "type": "array",
+            "description": "List of tokens received from [uploading files](/api-reference/ticketing/tickets/ticket-attachments/#upload-files) for comment attachments. The files are attached by creating or updating tickets with the tokens. See [Attaching files](/api-reference/ticketing/tickets/tickets/#attaching-files) in Tickets",
+            "items": {
+              "type": "string"
+            }
+          },
+          "via": {
+            "$ref": "#/components/schemas/TicketAuditViaObject"
+          }
+        },
+        "example": {
+          "attachments": [
+            {
+              "content_type": "text/plain",
+              "content_url": "https://company.zendesk.com/attachments/crash.log",
+              "file_name": "crash.log",
+              "id": 498483,
+              "size": 2532,
+              "thumbnails": []
+            }
+          ],
+          "author_id": 123123,
+          "body": "Thanks for your help!",
+          "created_at": "2009-07-20T22:55:29Z",
+          "id": 1274,
+          "metadata": {
+            "system": {
+              "client": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36",
+              "ip_address": "1.1.1.1",
+              "latitude": -37.000000000001,
+              "location": "Melbourne, 07, Australia",
+              "longitude": 144.0000000000002
+            },
+            "via": {
+              "channel": "web",
+              "source": {
+                "from": {},
+                "rel": "web_widget",
+                "to": {}
+              }
+            }
+          },
+          "public": true,
+          "type": "Comment"
+        }
+      },
+      "TicketCreateRequest": {
+        "type": "object",
+        "properties": {
+          "system_metadata": {
+            "type": "object",
+            "description": "System metadata for the request, typically set by internal clients",
+            "additionalProperties": true
+          },
+          "ticket": {
+            "$ref": "#/components/schemas/TicketObject"
+          }
+        },
+        "required": [
+          "ticket"
+        ]
+      },
+      "TicketFieldValueInput": {
+        "type": "object",
+        "description": "A ticket custom field value assignment",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The ID of the custom field",
+            "example": 27642
+          },
+          "value": {
+            "description": "The value to assign to the custom field.\nType depends on the field configuration:\n- Text/textarea: string\n- Checkbox: boolean or \"true\"/\"false\" string\n- Dropdown/tagger: string or array of strings (multi-select)\n- Number/decimal: number or string representation\n- Date: string (ISO 8601 format)\n- Lookup: the target record's id, or an id prefixed with `external_id:` or `name:`\n- Multi-lookup: an array of target record ids, up to `max_selections` entries. Each write replaces the\n  entire set of selections. Unresolved ids are silently dropped. See\n  [Setting multi-lookup field values](/api-reference/ticketing/lookup_relationships/lookup_relationships/#setting-multi-lookup-field-values)\n",
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            ],
+            "example": "745"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "TicketMergeInput": {
+        "type": "object",
+        "properties": {
+          "ids": {
+            "type": "array",
+            "description": "Ids of tickets to merge into the target ticket",
+            "items": {
+              "type": "integer"
+            }
+          },
+          "source_comment": {
+            "type": "string",
+            "description": "Private comment to add to the source ticket"
+          },
+          "source_comment_is_public": {
+            "type": "boolean",
+            "description": "Whether comment in source tickets are public or private"
+          },
+          "target_comment": {
+            "type": "string",
+            "description": "Private comment to add to the target ticket"
+          },
+          "target_comment_is_public": {
+            "type": "boolean",
+            "description": "Whether comment in target ticket is public or private"
+          }
+        },
+        "required": [
+          "ids"
+        ]
+      },
+      "TicketMetricObject": {
+        "type": "object",
+        "properties": {
+          "agent_wait_time_in_minutes": {
+            "type": "object",
+            "description": "Number of minutes the agent spent waiting during calendar and business hours",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TicketMetricTimeObject"
+              }
+            ],
+            "readOnly": true
+          },
+          "assigned_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the ticket was assigned",
+            "readOnly": true
+          },
+          "assignee_stations": {
+            "type": "integer",
+            "description": "Number of assignees the ticket had",
+            "readOnly": true
+          },
+          "assignee_updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the assignee last updated the ticket",
+            "readOnly": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the record was created",
+            "readOnly": true
+          },
+          "custom_status_updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The date and time the ticket's custom status was last updated",
+            "readOnly": true
+          },
+          "first_resolution_time_in_minutes": {
+            "type": "object",
+            "description": "Number of minutes to the first resolution time during calendar and business hours",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TicketMetricTimeObject"
+              }
+            ],
+            "readOnly": true
+          },
+          "full_resolution_time_in_minutes": {
+            "type": "object",
+            "description": "Number of minutes to the full resolution during calendar and business hours",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TicketMetricTimeObject"
+              }
+            ],
+            "readOnly": true
+          },
+          "group_stations": {
+            "type": "integer",
+            "description": "Number of groups the ticket passed through",
+            "readOnly": true
+          },
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Automatically assigned when the client is created",
+            "readOnly": true
+          },
+          "initially_assigned_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the ticket was initially assigned",
+            "readOnly": true
+          },
+          "latest_comment_added_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the latest comment was added",
+            "readOnly": true
+          },
+          "on_hold_time_in_minutes": {
+            "type": "object",
+            "description": "Number of minutes on hold",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TicketMetricTimeObject"
+              }
+            ],
+            "readOnly": true
+          },
+          "reopens": {
+            "type": "integer",
+            "description": "Total number of times the ticket was reopened",
+            "readOnly": true
+          },
+          "replies": {
+            "type": "integer",
+            "description": "The number of public replies added to a ticket by an agent",
+            "readOnly": true
+          },
+          "reply_time_in_minutes": {
+            "type": "object",
+            "description": "Number of minutes to the first reply during calendar and business hours",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TicketMetricTimeObject"
+              }
+            ],
+            "readOnly": true
+          },
+          "reply_time_in_seconds": {
+            "type": "object",
+            "description": "Number of seconds to the first reply during calendar hours, only available for Messaging tickets",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TicketMetricTimeObject"
+              }
+            ],
+            "readOnly": true
+          },
+          "requester_updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the requester last updated the ticket",
+            "readOnly": true
+          },
+          "requester_wait_time_in_minutes": {
+            "type": "object",
+            "description": "Number of minutes the requester spent waiting during calendar and business hours",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TicketMetricTimeObject"
+              }
+            ],
+            "readOnly": true
+          },
+          "solved_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the ticket was solved",
+            "readOnly": true
+          },
+          "status_updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the status of the ticket was last updated",
+            "readOnly": true
+          },
+          "ticket_id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Id of the associated ticket",
+            "readOnly": true
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the record was last updated",
+            "readOnly": true
+          },
+          "url": {
+            "type": "string",
+            "description": "The API url of the ticket metric",
+            "readOnly": true
+          }
+        },
+        "example": {
+          "agent_wait_time_in_minutes": {
+            "business": 737,
+            "calendar": 2391
+          },
+          "assigned_at": "2011-05-05T10:38:52Z",
+          "assignee_stations": 1,
+          "assignee_updated_at": "2011-05-06T10:38:52Z",
+          "created_at": "2009-07-20T22:55:29Z",
+          "custom_status_updated_at": "2011-05-09T10:38:52Z",
+          "first_resolution_time_in_minutes": {
+            "business": 737,
+            "calendar": 2391
+          },
+          "full_resolution_time_in_minutes": {
+            "business": 737,
+            "calendar": 2391
+          },
+          "group_stations": 7,
+          "id": 33,
+          "initially_assigned_at": "2011-05-03T10:38:52Z",
+          "latest_comment_added_at": "2011-05-09T10:38:52Z",
+          "on_hold_time_in_minutes": {
+            "business": 637,
+            "calendar": 2290
+          },
+          "reopens": 55,
+          "replies": 322,
+          "reply_time_in_minutes": {
+            "business": 737,
+            "calendar": 2391
+          },
+          "reply_time_in_seconds": {
+            "calendar": 143460
+          },
+          "requester_updated_at": "2011-05-07T10:38:52Z",
+          "requester_wait_time_in_minutes": {
+            "business": 737,
+            "calendar": 2391
+          },
+          "solved_at": "2011-05-09T10:38:52Z",
+          "status_updated_at": "2011-05-04T10:38:52Z",
+          "ticket_id": 4343,
+          "updated_at": "2011-05-05T10:38:52Z"
+        }
+      },
+      "TicketMetricTimeObject": {
+        "type": "object",
+        "properties": {
+          "business": {
+            "type": "integer",
+            "description": "Time in business hours",
+            "readOnly": true
+          },
+          "calendar": {
+            "type": "integer",
+            "description": "Time in calendar hours",
+            "readOnly": true
+          }
+        }
+      },
+      "TicketMetricsByTicketMetricIdResponse": {
+        "type": "object",
+        "properties": {
+          "ticket_metric": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TicketMetricObject"
+            }
+          }
+        }
+      },
+      "TicketMetricsResponse": {
+        "type": "object",
+        "properties": {
+          "ticket_metrics": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TicketMetricObject"
+            }
+          }
+        }
+      },
+      "TicketObject": {
+        "type": "object",
+        "properties": {
+          "additional_collaborators": {
+            "type": "array",
+            "description": "Write only. An array of numeric IDs, emails, or objects containing name and email properties. See [Setting Collaborators](/api-reference/ticketing/tickets/tickets/#setting-collaborators). An email notification is sent to them when the ticket is updated",
+            "items": {
+              "$ref": "#/components/schemas/CollaboratorObject"
+            },
+            "writeOnly": true
+          },
+          "allow_attachments": {
+            "type": "boolean",
+            "description": "Permission for agents to add add attachments to a comment. Defaults to true",
+            "readOnly": true
+          },
+          "allow_channelback": {
+            "type": "boolean",
+            "description": "Is false if channelback is disabled, true otherwise. Only applicable for channels framework ticket",
+            "readOnly": true
+          },
+          "assignee_email": {
+            "type": "string",
+            "format": "email",
+            "description": "Write only. The email address of the agent to assign the ticket to",
+            "writeOnly": true
+          },
+          "assignee_id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The agent currently assigned to the ticket",
+            "nullable": true
+          },
+          "attribute_value_ids": {
+            "type": "array",
+            "description": "Write only. An array of the IDs of attribute values to be associated with the ticket",
+            "items": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "writeOnly": true
+          },
+          "brand_id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The id of the brand this ticket is associated with. See [Setting up multiple brands](https://support.zendesk.com/hc/en-us/articles/4408829476378)",
+            "nullable": true
+          },
+          "collaborator_ids": {
+            "type": "array",
+            "description": "The ids of users currently CC'ed on the ticket",
+            "items": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          "collaborators": {
+            "type": "array",
+            "description": "Write only. Users to add as cc's when creating a ticket. See [Setting Collaborators](/documentation/ticketing/managing-tickets/creating-and-updating-tickets#setting-collaborators)",
+            "items": {
+              "$ref": "#/components/schemas/CollaboratorObject"
+            },
+            "writeOnly": true
+          },
+          "comment": {
+            "$ref": "#/components/schemas/TicketCommentObject"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When this record was created",
+            "readOnly": true
+          },
+          "custom_fields": {
+            "type": "array",
+            "description": "Custom field values to set on the ticket.\nEach entry specifies a field ID and its value.\nSee [Setting custom field values](/documentation/ticketing/managing-tickets/creating-and-updating-tickets#setting-custom-field-values)\n",
+            "items": {
+              "$ref": "#/components/schemas/TicketFieldValueInput"
+            }
+          },
+          "custom_status_id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The custom ticket status id of the ticket. See [custom ticket statuses](#custom-ticket-statuses)",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "description": "The first comment on the ticket. When [creating a ticket](#create-ticket), use `comment` to set the description.\nSee [Description and first comment](#description-and-first-comment).\nOn create, can be set directly as an alternative to `comment`. Silently ignored on update.\n"
+          },
+          "due_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "If this is a ticket of type \"task\" it has a due date.  Due date format uses [ISO 8601](http://en.wikipedia.org/wiki/ISO_8601) format",
+            "nullable": true
+          },
+          "email_cc_ids": {
+            "type": "array",
+            "description": "The ids of agents or end users currently CC'ed on the ticket. See [CCs and followers resources](https://support.zendesk.com/hc/en-us/articles/4408822451482) in the Support Help Center",
+            "items": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "readOnly": true
+          },
+          "email_ccs": {
+            "type": "array",
+            "description": "Write only. An array of objects that represent agent or end users email CCs to add or delete from the ticket. See [Setting email CCs](/documentation/ticketing/managing-tickets/creating-and-updating-tickets/#setting-email-ccs). Ignored when [CCs and followers](https://support.zendesk.com/hc/en-us/articles/4408822451482) is not enabled",
+            "items": {
+              "$ref": "#/components/schemas/EmailCCObject"
+            },
+            "nullable": true,
+            "writeOnly": true
+          },
+          "encoded_id": {
+            "type": "string",
+            "description": "An encoded string representing the ticket's unique identifier",
+            "readOnly": true
+          },
+          "external_id": {
+            "type": "string",
+            "description": "An id you can use to link Zendesk Support tickets to local records",
+            "nullable": true
+          },
+          "fields": {
+            "type": "array",
+            "description": "Alias for custom_fields. Custom field values to set on the ticket.\nEach entry specifies a field ID and its value.\n",
+            "items": {
+              "$ref": "#/components/schemas/TicketFieldValueInput"
+            }
+          },
+          "follower_ids": {
+            "type": "array",
+            "description": "The ids of agents currently following the ticket. Ignored when [CCs and followers](https://support.zendesk.com/hc/en-us/articles/4408822451482) is not enabled",
+            "items": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "readOnly": true
+          },
+          "followers": {
+            "type": "array",
+            "description": "Write only. An array of objects that represents agent followers to add or delete from the ticket. See [Setting followers](/documentation/ticketing/managing-tickets/creating-and-updating-tickets/#setting-followers). Ignored when [CCs and followers](https://support.zendesk.com/hc/en-us/articles/4408822451482) is not enabled",
+            "items": {
+              "$ref": "#/components/schemas/FollowerObject"
+            },
+            "writeOnly": true
+          },
+          "followup_ids": {
+            "type": "array",
+            "description": "The ids of the followups created from this ticket. Ids are only visible once the ticket is closed",
+            "items": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "readOnly": true
+          },
+          "forum_topic_id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The topic in the Zendesk Web portal this ticket originated from, if any. The Web portal is deprecated"
+          },
+          "from_messaging_channel": {
+            "type": "boolean",
+            "description": "If true, the ticket's [via type](/documentation/ticketing/reference-guides/via-object-reference/) is a messaging channel.",
+            "readOnly": true
+          },
+          "generated_timestamp": {
+            "type": "integer",
+            "description": "A Unix timestamp that represents the most accurate reading of when this record was last updated. It is updated for all ticket updates, including system updates",
+            "readOnly": true
+          },
+          "group_id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The group this ticket is assigned to",
+            "nullable": true
+          },
+          "has_incidents": {
+            "type": "boolean",
+            "description": "Is true if a ticket is a problem type and has one or more incidents linked to it. Otherwise, the value is false.",
+            "readOnly": true
+          },
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Automatically assigned when the ticket is created",
+            "readOnly": true
+          },
+          "is_public": {
+            "type": "boolean",
+            "description": "Is true if any comments are public, false otherwise",
+            "readOnly": true
+          },
+          "macro_id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Write only. A single macro ID to be recorded in the ticket audit",
+            "writeOnly": true
+          },
+          "macro_ids": {
+            "type": "array",
+            "description": "Write only. List of macro IDs to be recorded in the ticket audit",
+            "items": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "writeOnly": true
+          },
+          "metadata": {
+            "type": "object",
+            "description": "Write only. Metadata for the audit. In the `audit` object, the data is specified in the `custom` property of the `metadata` object. See [Setting Metadata](/documentation/ticketing/managing-tickets/creating-and-updating-tickets/#setting-metadata)",
+            "additionalProperties": true,
+            "writeOnly": true
+          },
+          "organization_id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The organization of the requester. You can only specify the ID of an organization associated with the requester. See [Organization Memberships](/api-reference/ticketing/organizations/organization_memberships/)",
+            "nullable": true
+          },
+          "origin_zrn": {
+            "type": "string",
+            "description": "Write only. The Zendesk Resource Name (ZRN) of the origin for this ticket",
+            "writeOnly": true
+          },
+          "priority": {
+            "type": "string",
+            "description": "The urgency with which the ticket should be addressed",
+            "enum": [
+              "urgent",
+              "high",
+              "normal",
+              "low"
+            ],
+            "nullable": true
+          },
+          "problem_id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "For tickets of type \"incident\", the ID of the problem the incident is linked to",
+            "nullable": true
+          },
+          "raw_subject": {
+            "type": "string",
+            "description": "The dynamic content placeholder, if present, or the \"subject\" value, if not. See [Dynamic Content Items](/api-reference/ticketing/ticket-management/dynamic_content/).\nWhen set on create or update, overrides the `subject` field.\n"
+          },
+          "recipient": {
+            "type": "string",
+            "description": "The original recipient e-mail address of the ticket. Notification emails for the ticket are sent from this address"
+          },
+          "requester": {
+            "description": "Write only. Alternative to requester_id for specifying the ticket requester.\n\nCan be provided as:\n- Email string: \"user@example.com\"\n- User ID integer: 12345\n- User object: {name: \"John Doe\", email: \"john@example.com\"}\n\nIf both requester and requester_id are provided, requester_id takes precedence.\n\nWhen creating a ticket, if the user doesn't exist, they may be created\nautomatically depending on account settings.\n",
+            "oneOf": [
+              {
+                "type": "string",
+                "description": "Email address or username"
+              },
+              {
+                "type": "integer",
+                "description": "User ID"
+              },
+              {
+                "type": "object",
+                "description": "User creation attributes",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "description": "The user's primary email address"
+                  },
+                  "locale": {
+                    "type": "string",
+                    "description": "The user's locale (e.g., \"en-US\")"
+                  },
+                  "locale_id": {
+                    "type": "integer",
+                    "format": "int64",
+                    "description": "The user's locale ID"
+                  },
+                  "name": {
+                    "type": "string",
+                    "description": "The user's name"
+                  },
+                  "organization_id": {
+                    "type": "integer",
+                    "format": "int64",
+                    "description": "The organization ID to associate with the user"
+                  },
+                  "role": {
+                    "type": "string",
+                    "description": "The user's role (e.g., \"end-user\", \"agent\", \"admin\")"
+                  },
+                  "verified": {
+                    "type": "boolean",
+                    "description": "Whether the user's email is verified"
+                  }
+                }
+              }
+            ],
+            "writeOnly": true
+          },
+          "requester_id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The user who requested this ticket",
+            "nullable": true
+          },
+          "safe_update": {
+            "type": "boolean",
+            "description": "Write only. Optional boolean. When true and an `updated_stamp` date is included, protects against ticket update collisions and returns a message to let you know if one occurs. See [Protecting against ticket update collisions](/documentation/ticketing/managing-tickets/creating-and-updating-tickets/#protecting-against-ticket-update-collisions). A value of false has the same effect as true. Omit the property to force the updates to not be safe",
+            "writeOnly": true
+          },
+          "satisfaction_probability": {
+            "type": "number",
+            "description": "The predicted satisfaction probability score",
+            "readOnly": true
+          },
+          "satisfaction_rating": {
+            "type": "object",
+            "description": "The satisfaction rating of the ticket, if it exists, or the state of satisfaction, \"offered\" or \"unoffered\". The value is null for plan types that don't support CSAT",
+            "additionalProperties": true,
+            "readOnly": true
+          },
+          "sharing_agreement_ids": {
+            "type": "array",
+            "description": "An array of the numeric IDs of sharing agreements. Note that this replaces any existing agreements",
+            "items": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          "sharing_agreements": {
+            "description": "Write only. Sharing agreement configuration for the ticket.\nAccepts a single object or an array of objects.\n",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/SharingAgreementInput"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/SharingAgreementInput"
+                }
+              }
+            ],
+            "writeOnly": true
+          },
+          "status": {
+            "type": "string",
+            "description": "The state of the ticket.\n\nIf your account has activated custom ticket statuses, this is the ticket's\nstatus category. See [custom ticket statuses](#custom-ticket-statuses)\n",
+            "enum": [
+              "new",
+              "open",
+              "pending",
+              "hold",
+              "solved",
+              "closed"
+            ]
+          },
+          "subject": {
+            "type": "string",
+            "description": "The value of the subject field for this ticket. See [Subject](/api-reference/ticketing/tickets/tickets/#subject)\n",
+            "nullable": true
+          },
+          "submitter_id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The user who submitted the ticket. The submitter always becomes the\nauthor of the first comment on the ticket.\n\nIf not specified, defaults to the authenticated user.\n",
+            "nullable": true
+          },
+          "support_type": {
+            "type": "string",
+            "description": "The type of support that handled the ticket",
+            "enum": [
+              "agent",
+              "ai_agent"
+            ],
+            "nullable": true
+          },
+          "suspended_ticket_id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Write only. The ID of the suspended ticket being recovered",
+            "writeOnly": true
+          },
+          "suspension_type_id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Write only. The suspension type ID when recovering a suspended ticket",
+            "writeOnly": true
+          },
+          "system_metadata": {
+            "type": "object",
+            "description": "Write only. System metadata for the ticket, typically set by internal clients",
+            "properties": {
+              "client": {
+                "type": "string"
+              },
+              "ip_address": {
+                "type": "string"
+              }
+            },
+            "writeOnly": true
+          },
+          "tags": {
+            "description": "The tags applied to this ticket. Unless otherwise specified, the [set tag](/api-reference/ticketing/ticket-management/tags/#set-tags) behavior is used, which overwrites and replaces existing tags",
+            "oneOf": [
+              {
+                "type": "array",
+                "description": "An array of tag strings",
+                "items": {
+                  "type": "string"
+                }
+              },
+              {
+                "type": "string",
+                "description": "A single tag string"
+              }
+            ]
+          },
+          "tde_workspace": {
+            "type": "object",
+            "description": "Write only. TDE workspace information for the ticket",
+            "properties": {
+              "previous_workspace": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "integer",
+                    "format": "int64"
+                  },
+                  "title": {
+                    "type": "string"
+                  }
+                }
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "ADD",
+                  "CHANGE",
+                  "DELETE"
+                ]
+              },
+              "workspace": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "integer",
+                    "format": "int64"
+                  },
+                  "title": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "writeOnly": true
+          },
+          "ticket_form_id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Enterprise only. The id of the ticket form to render for the ticket",
+            "nullable": true
+          },
+          "tpe_voice_comment": {
+            "type": "object",
+            "description": "Write only. A TPE voice comment for Talk Partner Edition tickets",
+            "properties": {
+              "agent_id": {
+                "type": "integer",
+                "format": "int64",
+                "nullable": true
+              },
+              "answering_machine_detection_status": {
+                "type": "string",
+                "nullable": true
+              },
+              "app_id": {
+                "type": "integer",
+                "format": "int64"
+              },
+              "app_name": {
+                "type": "string",
+                "nullable": true
+              },
+              "author_id": {
+                "type": "integer",
+                "format": "int64"
+              },
+              "call_connected_at": {
+                "type": "string",
+                "format": "date-time",
+                "nullable": true
+              },
+              "call_disposition": {
+                "type": "string",
+                "nullable": true
+              },
+              "call_ended_at": {
+                "type": "string",
+                "format": "date-time",
+                "nullable": true
+              },
+              "call_id": {
+                "type": "integer",
+                "format": "int64"
+              },
+              "call_recording_consent": {
+                "type": "string",
+                "nullable": true
+              },
+              "call_recording_consent_action": {
+                "type": "string",
+                "nullable": true
+              },
+              "call_recording_consent_keypress": {
+                "type": "string",
+                "nullable": true
+              },
+              "call_started_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "call_type": {
+                "type": "string",
+                "nullable": true
+              },
+              "callback_number": {
+                "type": "string",
+                "nullable": true
+              },
+              "callback_requested_at": {
+                "type": "string",
+                "format": "date-time",
+                "nullable": true
+              },
+              "completion_status": {
+                "type": "string",
+                "nullable": true
+              },
+              "connection_attempts": {
+                "type": "integer",
+                "nullable": true
+              },
+              "consultation_time": {
+                "type": "integer",
+                "nullable": true
+              },
+              "direction": {
+                "type": "string"
+              },
+              "disconnection_reason": {
+                "type": "string",
+                "nullable": true
+              },
+              "dnis": {
+                "type": "string",
+                "nullable": true
+              },
+              "duration": {
+                "type": "integer",
+                "nullable": true
+              },
+              "end_user_id": {
+                "type": "integer",
+                "format": "int64",
+                "nullable": true
+              },
+              "end_user_location": {
+                "type": "string",
+                "nullable": true
+              },
+              "exceeded_queue_time": {
+                "type": "boolean",
+                "nullable": true
+              },
+              "extension": {
+                "type": "string",
+                "nullable": true
+              },
+              "external_id": {
+                "type": "string"
+              },
+              "from_line": {
+                "type": "string"
+              },
+              "from_line_nickname": {
+                "type": "string",
+                "nullable": true
+              },
+              "hold_time": {
+                "type": "integer",
+                "nullable": true
+              },
+              "intent": {
+                "type": "string",
+                "nullable": true
+              },
+              "ivr_destination_group_name": {
+                "type": "string",
+                "nullable": true
+              },
+              "ivr_time_spent": {
+                "type": "integer",
+                "nullable": true
+              },
+              "language": {
+                "type": "string",
+                "nullable": true
+              },
+              "line_type": {
+                "type": "string"
+              },
+              "longest_hold_time": {
+                "type": "integer",
+                "nullable": true
+              },
+              "number_of_holds": {
+                "type": "integer",
+                "nullable": true
+              },
+              "outside_business_hours": {
+                "type": "boolean",
+                "nullable": true
+              },
+              "overflowed_to": {
+                "type": "string",
+                "nullable": true
+              },
+              "phone_name": {
+                "type": "string",
+                "nullable": true
+              },
+              "public": {
+                "type": "boolean"
+              },
+              "quality_score": {
+                "type": "integer",
+                "nullable": true
+              },
+              "queue_name": {
+                "type": "string",
+                "nullable": true
+              },
+              "queue_time": {
+                "type": "integer",
+                "nullable": true
+              },
+              "recorded": {
+                "type": "boolean"
+              },
+              "recording_time": {
+                "type": "integer",
+                "nullable": true
+              },
+              "recording_type": {
+                "type": "string"
+              },
+              "recording_url": {
+                "type": "string",
+                "nullable": true
+              },
+              "sentiment_agent": {
+                "type": "string",
+                "nullable": true
+              },
+              "sentiment_call": {
+                "type": "string",
+                "nullable": true
+              },
+              "sentiment_customer": {
+                "type": "string",
+                "nullable": true
+              },
+              "sentiment_trend": {
+                "type": "string",
+                "nullable": true
+              },
+              "short_summary": {
+                "type": "string",
+                "nullable": true
+              },
+              "summary": {
+                "type": "string",
+                "nullable": true
+              },
+              "talk_time": {
+                "type": "integer",
+                "nullable": true
+              },
+              "time_to_answer": {
+                "type": "integer",
+                "nullable": true
+              },
+              "title": {
+                "type": "string"
+              },
+              "to_line": {
+                "type": "string"
+              },
+              "to_line_nickname": {
+                "type": "string",
+                "nullable": true
+              },
+              "transcript": {
+                "type": "string",
+                "nullable": true
+              },
+              "via_id": {
+                "type": "integer",
+                "format": "int64"
+              },
+              "video_recording_url": {
+                "type": "string",
+                "nullable": true
+              },
+              "voicemail": {
+                "type": "boolean",
+                "nullable": true
+              },
+              "voicemail_requested_at": {
+                "type": "string",
+                "format": "date-time",
+                "nullable": true
+              },
+              "wait_time": {
+                "type": "integer",
+                "nullable": true
+              }
+            },
+            "writeOnly": true
+          },
+          "type": {
+            "type": "string",
+            "description": "The type of this ticket",
+            "enum": [
+              "problem",
+              "incident",
+              "question",
+              "task"
+            ],
+            "nullable": true
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When this record last got updated. It is updated only if the update generates a [ticket event](#incremental-ticket-event-export)",
+            "readOnly": true
+          },
+          "updated_stamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Write only. Datetime of last update received from API. See the `safe_update` property",
+            "writeOnly": true
+          },
+          "url": {
+            "type": "string",
+            "description": "The API url of this ticket",
+            "readOnly": true
+          },
+          "via": {
+            "$ref": "#/components/schemas/ViaObject"
+          },
+          "via_followup_source_id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Write only. The id of a closed ticket when creating a follow-up ticket. See [Creating a follow-up ticket](/documentation/ticketing/managing-tickets/creating-and-updating-tickets#creating-a-follow-up-ticket)",
+            "writeOnly": true
+          },
+          "via_id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Write only. For more information, see the [Via object reference](/documentation/ticketing/reference-guides/via-object-reference/)",
+            "writeOnly": true
+          },
+          "voice_comment": {
+            "type": "object",
+            "description": "Write only. A voice comment for Talk tickets. See [Adding voice comments to tickets](/documentation/ticketing/managing-tickets/adding-voice-comments-to-tickets/)",
+            "properties": {
+              "answered_by_id": {
+                "type": "integer",
+                "format": "int64",
+                "description": "The agent who answered the call",
+                "nullable": true
+              },
+              "call_duration": {
+                "type": "integer",
+                "description": "Duration of the call in seconds"
+              },
+              "from": {
+                "type": "string",
+                "description": "Incoming phone number"
+              },
+              "location": {
+                "type": "string",
+                "description": "Location of the caller",
+                "nullable": true
+              },
+              "recording_url": {
+                "type": "string",
+                "description": "URL of the recording",
+                "nullable": true
+              },
+              "to": {
+                "type": "string",
+                "description": "Dialed phone number"
+              },
+              "transcription_text": {
+                "type": "string",
+                "description": "Transcription of the call",
+                "nullable": true
+              }
+            },
+            "additionalProperties": true,
+            "writeOnly": true
+          }
+        },
+        "example": {
+          "assignee_id": 235323,
+          "collaborator_ids": [
+            35334,
+            234
+          ],
+          "created_at": "2009-07-20T22:55:29Z",
+          "custom_fields": [
+            {
+              "id": 27642,
+              "value": "745"
+            },
+            {
+              "id": 27648,
+              "value": "yes"
+            }
+          ],
+          "custom_status_id": 123,
+          "description": "The fire is very colorful.",
+          "due_at": null,
+          "external_id": "ahg35h3jh",
+          "follower_ids": [
+            35334,
+            234
+          ],
+          "from_messaging_channel": false,
+          "generated_timestamp": 1304553600,
+          "group_id": 98738,
+          "has_incidents": false,
+          "id": 35436,
+          "organization_id": 509974,
+          "priority": "high",
+          "problem_id": 9873764,
+          "raw_subject": "{{dc.printer_on_fire}}",
+          "recipient": "support@company.com",
+          "requester_id": 20978392,
+          "satisfaction_rating": {
+            "comment": "Great support!",
+            "id": 1234,
+            "score": "good"
+          },
+          "sharing_agreement_ids": [
+            84432
+          ],
+          "status": "open",
+          "subject": "Help, my printer is on fire!",
+          "submitter_id": 76872,
+          "tags": [
+            "enterprise",
+            "other_tag"
+          ],
+          "type": "incident",
+          "updated_at": "2011-05-05T10:38:52Z",
+          "url": "https://company.zendesk.com/api/v2/tickets/35436",
+          "via": {
+            "channel": "web"
+          }
+        }
+      },
+      "TicketRelatedInformation": {
+        "type": "object",
+        "properties": {
+          "followup_source_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "description": "Sources to follow up"
+            }
+          },
+          "from_archive": {
+            "type": "boolean",
+            "description": "Is true if the current ticket is archived"
+          },
+          "incidents": {
+            "type": "integer",
+            "description": "A count of related incident occurrences"
+          },
+          "jira_issue_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "description": "Associated jira issues"
+            }
+          },
+          "topic_id": {
+            "type": "string",
+            "description": "Related topic in the Web portal (deprecated feature)",
+            "nullable": true
+          }
+        }
+      },
+      "TicketResponse": {
+        "type": "object",
+        "properties": {
+          "ticket": {
+            "$ref": "#/components/schemas/TicketObject"
+          }
+        }
+      },
+      "TicketSkipObject": {
+        "type": "object",
+        "properties": {
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Time the skip was created",
+            "readOnly": true
+          },
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Automatically assigned upon creation",
+            "readOnly": true
+          },
+          "reason": {
+            "type": "string",
+            "description": "Reason for skipping the ticket",
+            "readOnly": true
+          },
+          "ticket": {
+            "type": "object",
+            "description": "The skipped ticket. See the [Ticket object reference](/api-reference/ticketing/tickets/tickets/#json-format)",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TicketObject"
+              }
+            ]
+          },
+          "ticket_id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "ID of the skipped ticket",
+            "readOnly": true
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Time the skip was last updated",
+            "readOnly": true
+          },
+          "user_id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "ID of the skipping agent",
+            "readOnly": true
+          }
+        },
+        "example": {
+          "created_at": "2015-09-30T21:44:03Z",
+          "id": 1,
+          "reason": "I have no idea.",
+          "ticket": {
+            "assignee_id": 235323,
+            "collaborator_ids": [
+              35334,
+              234
+            ],
+            "created_at": "2009-07-20T22:55:29Z",
+            "custom_fields": [
+              {
+                "id": 27642,
+                "value": "745"
+              },
+              {
+                "id": 27648,
+                "value": "yes"
+              }
+            ],
+            "description": "The fire is very colorful.",
+            "due_at": null,
+            "external_id": "ahg35h3jh",
+            "follower_ids": [
+              35334,
+              234
+            ],
+            "from_messaging_channel": false,
+            "generated_timestamp": 1304553600,
+            "group_id": 98738,
+            "has_incidents": false,
+            "id": 123,
+            "organization_id": 509974,
+            "priority": "high",
+            "problem_id": 9873764,
+            "raw_subject": "{{dc.printer_on_fire}}",
+            "recipient": "support@company.com",
+            "requester_id": 20978392,
+            "satisfaction_rating": {
+              "comment": "Great support!",
+              "id": 1234,
+              "score": "good"
+            },
+            "sharing_agreement_ids": [
+              84432
+            ],
+            "status": "open",
+            "subject": "Help, my printer is on fire!",
+            "submitter_id": 76872,
+            "tags": [
+              "enterprise",
+              "other_tag"
+            ],
+            "type": "incident",
+            "updated_at": "2011-05-05T10:38:52Z",
+            "url": "https://company.zendesk.com/api/v2/tickets/35436",
+            "via": {
+              "channel": "web"
+            }
+          },
+          "ticket_id": 123,
+          "updated_at": "2015-09-30T21:44:03Z",
+          "user_id": 456
+        }
+      },
+      "TicketSkipsResponse": {
+        "type": "object",
+        "properties": {
+          "skips": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TicketSkipObject"
+            }
+          }
+        }
+      },
+      "TicketUpdateRequest": {
+        "type": "object",
+        "properties": {
+          "system_metadata": {
+            "type": "object",
+            "description": "System metadata for the request, typically set by internal clients",
+            "additionalProperties": true
+          },
+          "ticket": {
+            "$ref": "#/components/schemas/TicketObject"
+          }
+        }
+      },
+      "TicketUpdateResponse": {
+        "type": "object",
+        "properties": {
+          "audit": {
+            "$ref": "#/components/schemas/AuditObject"
+          },
+          "ticket": {
+            "$ref": "#/components/schemas/TicketObject"
+          }
+        }
+      },
+      "TicketsCreateRequest": {
+        "type": "object",
+        "properties": {
+          "tickets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TicketObject"
+            }
+          }
+        }
+      },
+      "TicketsResponse": {
+        "type": "object",
+        "properties": {
+          "tickets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TicketObject"
+            }
+          }
+        }
+      },
+      "TicketsUpdateRequest": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "ticket": {
+                "type": "object",
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/TicketObject"
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "additional_tags": {
+                        "type": "array",
+                        "description": "Tags to add to existing tags without overwriting",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "remove_tags": {
+                        "type": "array",
+                        "description": "Tags to remove from the ticket",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            },
+            "required": [
+              "ticket"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "tickets": {
+                "type": "array",
+                "items": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/TicketObject"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "additional_tags": {
+                          "type": "array",
+                          "description": "Tags to add to existing tags without overwriting",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "id": {
+                          "type": "integer",
+                          "format": "int64",
+                          "description": "The ID of the ticket to update"
+                        },
+                        "remove_tags": {
+                          "type": "array",
+                          "description": "Tags to remove from the ticket",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "required": [
+                        "id"
+                      ]
+                    }
+                  ]
+                },
+                "maxItems": 100
+              }
+            },
+            "required": [
+              "tickets"
+            ]
+          }
+        ]
+      },
+      "UpdateResourceResult": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "description": "the action the job attempted (`\"action\": \"update\"`)\n"
+          },
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "the id of the resource the job attempted to update"
+          },
+          "status": {
+            "type": "string",
+            "description": "the status (`\"status\": \"Updated\"`)\n"
+          },
+          "success": {
+            "type": "boolean",
+            "description": "whether the action was successful or not (`\"success\": true`)\n"
+          }
+        },
+        "required": [
+          "id",
+          "action",
+          "success",
+          "status"
+        ]
+      },
+      "ViaObject": {
+        "type": "object",
+        "description": "An object explaining how the ticket was created. See the [Via object reference](/documentation/ticketing/reference-guides/via-object-reference)\n",
+        "properties": {
+          "channel": {
+            "description": "This tells you how the ticket or event was created. Examples: \"web\", \"mobile\", \"rule\", \"system\".\nMay be a string name or an integer channel ID.\n",
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "source": {
+            "type": "object",
+            "description": "For some channels a source object gives more information about how or why the ticket or event was created\n",
+            "properties": {
+              "from": {
+                "type": "object",
+                "properties": {
+                  "address": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "id": {
+                    "type": "integer",
+                    "format": "int64",
+                    "nullable": true
+                  },
+                  "name": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "title": {
+                    "type": "string",
+                    "nullable": true
+                  }
+                }
+              },
+              "rel": {
+                "type": "string",
+                "nullable": true
+              },
+              "to": {
+                "type": "object",
+                "properties": {
+                  "address": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "additionalProperties": true
+          }
+        },
+        "example": {
+          "channel": "rule",
+          "source": {
+            "from": {
+              "id": 22472716,
+              "title": "Assign to first responder"
+            },
+            "rel": "trigger",
+            "to": {}
+          }
+        },
+        "readOnly": true
+      }
+    },
+    "parameters": {
+      "CursorPaginationPageAfter": {
+        "name": "page[after]",
+        "in": "query",
+        "description": "Cursor pagination: cursor token to fetch records after this position.",
+        "schema": {
+          "type": "string"
+        },
+        "example": "eyJvIjoiaWQiLCJ2IjoiYVFFPSJ9"
+      },
+      "CursorPaginationPageBefore": {
+        "name": "page[before]",
+        "in": "query",
+        "description": "Cursor pagination: cursor token to fetch records before this position.",
+        "schema": {
+          "type": "string"
+        },
+        "example": "eyJvIjoiaWQiLCJ2IjoiYVFFPSJ9"
+      },
+      "CursorPaginationPageSize": {
+        "name": "page[size]",
+        "in": "query",
+        "description": "Cursor pagination: number of records per page (default varies by endpoint, typically 100).\n\nExample: `?page[size]=50&page[after]=eyJvIjoiaWQiLCJ2IjoiYVFFPSJ9`\n",
+        "schema": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "example": 100
+      },
+      "CursorPaginationSort": {
+        "name": "sort",
+        "in": "query",
+        "description": "Field to sort results by. Prefix with `-` for descending order.\n\nWhen used with cursor pagination, this determines the cursor ordering.\n\nExample: `?sort=name` or `?sort=-created_at`\n",
+        "schema": {
+          "type": "string"
+        },
+        "example": "name"
+      },
+      "OffsetPaginationPage": {
+        "name": "page",
+        "in": "query",
+        "description": "Traditional offset pagination page number (non-negative integer). Example: `?page=2`\n\nOffset and cursor pagination (`page[size]`, `page[after]`, `page[before]`) are mutually exclusive - use one format or the other, not both.\n",
+        "schema": {
+          "type": "integer"
+        },
+        "example": 1
+      },
+      "IncludeBoundaryIndicators": {
+        "name": "include_boundary_indicators",
+        "in": "query",
+        "description": "When true, includes `has_more` indicator in the cursor pagination response meta.\n\nOnly valid with cursor pagination (page[size], page[after], page[before]).\n",
+        "schema": {
+          "type": "boolean"
+        }
+      },
+      "IncludeItemCursors": {
+        "name": "include_item_cursors",
+        "in": "query",
+        "description": "When true, includes cursor values for each item in the cursor pagination response.\n\nOnly valid with cursor pagination (page[size], page[after], page[before]).\n",
+        "schema": {
+          "type": "boolean"
+        }
+      },
+      "LookupRelationshipAutocompleteFieldIdFragment": {
+        "name": "field_id",
+        "in": "query",
+        "description": "The id of a lookup relationship field.  The type of field is determined\nby the `source` param\n",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "LookupRelationshipAutocompleteSourceFragment": {
+        "name": "source",
+        "in": "query",
+        "description": "If a `field_id` is provided, this specifies the type of the field.\nFor example, if the field is on a \"zen:user\", it references a field on a user\n",
+        "schema": {
+          "type": "string"
+        },
+        "examples": {
+          "organization": {
+            "summary": "A reference to an organization",
+            "value": "zen:organization"
+          },
+          "ticket": {
+            "summary": "A reference to a ticket",
+            "value": "zen:ticket"
+          },
+          "user": {
+            "summary": "A reference to a user",
+            "value": "zen:user"
+          }
+        }
+      },
+      "OrganizationId": {
+        "name": "organization_id",
+        "in": "path",
+        "description": "The ID of an organization",
+        "required": true,
+        "schema": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "example": 16
+      },
+      "PerPage": {
+        "name": "per_page",
+        "in": "query",
+        "description": "Number of records to return per page.\n\nNote: Default and maximum values vary by endpoint. Check endpoint-specific\ndocumentation for limits.\n",
+        "schema": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "example": 50
+      },
+      "TicketId": {
+        "name": "ticket_id",
+        "in": "path",
+        "description": "The ID of the ticket",
+        "required": true,
+        "schema": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "example": 123456
+      },
+      "TicketIds": {
+        "name": "ids",
+        "in": "query",
+        "description": "Comma-separated list of ticket ids",
+        "required": true,
+        "schema": {
+          "type": "string"
+        },
+        "example": "35436,35437"
+      },
+      "TicketSortBy": {
+        "name": "sort_by",
+        "in": "query",
+        "description": "Sort by",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "id",
+            "subject",
+            "deleted_at",
+            "created_at",
+            "updated_at",
+            "status",
+            "requester",
+            "requester.name",
+            "group",
+            "assignee",
+            "assignee.name"
+          ]
+        }
+      },
+      "TicketSortOrder": {
+        "name": "sort_order",
+        "in": "query",
+        "description": "Sort order. Defaults to \"asc\"",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "asc",
+            "desc"
+          ]
+        }
+      },
+      "TicketSupportTypeScope": {
+        "name": "support_type_scope",
+        "in": "query",
+        "description": "Lists tickets by support type. Possible values are \"all\", \"agent\", or \"ai_agent\". Defaults to \"agent\"\n",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "TicketsInclude": {
+        "name": "include",
+        "in": "query",
+        "description": "Sideloads to include in the response. Accepts a comma-separated list of values.\nSee [Sideloading](/documentation/api-basics/working-with-data/side_loading/#supported-endpoints).\n",
+        "schema": {
+          "type": "string"
+        },
+        "example": "users,groups,organizations"
+      },
+      "UserId": {
+        "name": "user_id",
+        "in": "path",
+        "description": "The id of the user",
+        "required": true,
+        "schema": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "example": 35436
+      }
+    },
+    "examples": {
+      "JobStatusResponseExample": {
+        "value": {
+          "job_status": {
+            "id": "82de0b044094f0c67893ac9fe64f1a99",
+            "message": "Completed at 2018-03-08 10:07:04 +0000",
+            "progress": 2,
+            "results": [
+              {
+                "action": "update",
+                "id": 244,
+                "status": "Updated",
+                "success": true
+              },
+              {
+                "action": "update",
+                "id": 245,
+                "status": "Updated",
+                "success": true
+              }
+            ],
+            "status": "completed",
+            "total": 2,
+            "url": "https://example.zendesk.com/api/v2/job_statuses/82de0b0467893ac9fe64f1a99"
+          }
+        }
+      },
+      "ListDeletedTicketsResponseExample": {
+        "value": {
+          "count": 1,
+          "deleted_tickets": [
+            {
+              "actor": {
+                "id": 3946,
+                "name": "Taz Wombat"
+              },
+              "deleted_at": "20140704T15:37:04Z",
+              "id": 581,
+              "previous_state": "open",
+              "subject": "Wombat Party"
+            }
+          ],
+          "next_page": null,
+          "previous_page": null
+        }
+      },
+      "ListTicketCollaboratorsResponseExample": {
+        "value": {
+          "users": [
+            {
+              "id": 223443,
+              "name": "Johnny Agent"
+            },
+            {
+              "id": 8678530,
+              "name": "Peter Admin"
+            }
+          ]
+        }
+      },
+      "ListTicketEmailCCsResponseExample": {
+        "value": {
+          "users": [
+            {
+              "id": "223443",
+              "name": "Johnny Agent"
+            },
+            {
+              "id": "8678530",
+              "name": "Peter Admin"
+            },
+            {
+              "id": "6748530",
+              "name": "Jane End User"
+            }
+          ]
+        }
+      },
+      "ListTicketFollowersResponseExample": {
+        "value": {
+          "users": [
+            {
+              "id": 223443,
+              "name": "Johnny Agent"
+            },
+            {
+              "id": 8678530,
+              "name": "Peter Admin"
+            }
+          ]
+        }
+      },
+      "ListTicketIncidentsResponseExample": {
+        "value": {
+          "tickets": [
+            {
+              "description": "The fire is very colorful.",
+              "id": 33,
+              "status": "open",
+              "subject": "My printer is on fire"
+            },
+            {
+              "description": "The fire is very colorful as well!",
+              "id": 34,
+              "status": "pending",
+              "subject": "The printer is on fire over here too"
+            }
+          ]
+        }
+      },
+      "ListTicketProblemsResponseExample": {
+        "value": {
+          "tickets": [
+            {
+              "custom_status_id": 123,
+              "description": "The fire is very colorful.",
+              "id": 33,
+              "status": "open",
+              "subject": "My printer is on fire"
+            },
+            {
+              "custom_status_id": 231,
+              "description": "The fire is very colorful as well!",
+              "id": 34,
+              "status": "pending",
+              "subject": "The printer is on fire over here too"
+            }
+          ]
+        }
+      },
+      "PermanentlyDeleteTicketJobStatusResponseExample": {
+        "value": {
+          "job_status": {
+            "id": "82de0b044094f0c67893ac9fe64f1a99",
+            "message": null,
+            "progress": null,
+            "results": null,
+            "status": "queued",
+            "total": null,
+            "url": "https://example.zendesk.com/api/v2/job_statuses/82de0b0467893ac9fe64f1a99"
+          }
+        }
+      },
+      "TicketCreateRequestExample": {
+        "value": {
+          "ticket": {
+            "comment": {
+              "body": "The smoke is very colorful."
+            },
+            "priority": "urgent",
+            "subject": "My printer is on fire!"
+          }
+        }
+      },
+      "TicketMergeInputExample": {
+        "value": {
+          "ids": [
+            123,
+            456,
+            789
+          ],
+          "source_comment": "Closing in favor of #111",
+          "target_comment": "Combining with #123, #456, #789"
+        }
+      },
+      "TicketMetricResponseExample": {
+        "value": {
+          "ticket_metric": [
+            {
+              "agent_wait_time_in_minutes": {
+                "business": 0,
+                "calendar": 0
+              },
+              "assigned_at": "2020-07-20T06:21:26Z",
+              "assignee_stations": 0,
+              "assignee_updated_at": "2020-07-20T06:21:26Z",
+              "created_at": "2020-07-21T01:01:42Z",
+              "first_resolution_time_in_minutes": {
+                "business": 0,
+                "calendar": 0
+              },
+              "full_resolution_time_in_minutes": {
+                "business": 0,
+                "calendar": 0
+              },
+              "group_stations": 0,
+              "id": 33,
+              "initially_assigned_at": "2020-07-20T06:21:26Z",
+              "latest_comment_added_at": "2020-07-21T01:17:16Z",
+              "on_hold_time_in_minutes": {
+                "business": 0,
+                "calendar": 0
+              },
+              "reopens": 0,
+              "replies": 1,
+              "reply_time_in_minutes": {
+                "business": 16,
+                "calendar": 16
+              },
+              "reply_time_in_seconds": {
+                "calendar": 960
+              },
+              "requester_updated_at": "2020-07-21T01:17:16Z",
+              "requester_wait_time_in_minutes": {
+                "business": 0,
+                "calendar": 0
+              },
+              "solved_at": "2020-07-20T06:21:26Z",
+              "status_updated_at": "2020-07-21T01:01:41Z",
+              "ticket_id": 1517,
+              "updated_at": "2020-07-21T01:17:16Z",
+              "url": "https://example.zendesk.com/api/v2/ticket_metrics/33"
+            }
+          ]
+        }
+      },
+      "TicketMetricsResponseExample": {
+        "value": {
+          "ticket_metrics": [
+            {
+              "agent_wait_time_in_minutes": {
+                "business": 0,
+                "calendar": 0
+              },
+              "assigned_at": "2020-07-20T06:21:26Z",
+              "assignee_stations": 0,
+              "assignee_updated_at": "2020-07-20T06:21:26Z",
+              "created_at": "2020-07-21T01:01:42Z",
+              "first_resolution_time_in_minutes": {
+                "business": 0,
+                "calendar": 0
+              },
+              "full_resolution_time_in_minutes": {
+                "business": 0,
+                "calendar": 0
+              },
+              "group_stations": 0,
+              "id": 33,
+              "initially_assigned_at": "2020-07-20T06:21:26Z",
+              "latest_comment_added_at": "2020-07-21T01:17:16Z",
+              "on_hold_time_in_minutes": {
+                "business": 0,
+                "calendar": 0
+              },
+              "reopens": 0,
+              "replies": 1,
+              "reply_time_in_minutes": {
+                "business": 16,
+                "calendar": 16
+              },
+              "reply_time_in_seconds": {
+                "calendar": 960
+              },
+              "requester_updated_at": "2020-07-21T01:17:16Z",
+              "requester_wait_time_in_minutes": {
+                "business": 0,
+                "calendar": 0
+              },
+              "solved_at": "2020-07-20T06:21:26Z",
+              "status_updated_at": "2020-07-21T01:01:41Z",
+              "ticket_id": 1517,
+              "updated_at": "2020-07-21T01:17:16Z",
+              "url": "https://example.zendesk.com/api/v2/ticket_metrics/33"
+            },
+            {
+              "agent_wait_time_in_minutes": {
+                "business": 0,
+                "calendar": 0
+              },
+              "assigned_at": "2020-07-20T06:21:26Z",
+              "assignee_stations": 0,
+              "assignee_updated_at": "2020-07-20T06:21:26Z",
+              "created_at": "2020-07-20T06:21:27Z",
+              "first_resolution_time_in_minutes": {
+                "business": 0,
+                "calendar": 0
+              },
+              "full_resolution_time_in_minutes": {
+                "business": 0,
+                "calendar": 0
+              },
+              "group_stations": 0,
+              "id": 34,
+              "initially_assigned_at": "2020-07-20T06:21:26Z",
+              "latest_comment_added_at": "2020-07-20T06:21:26Z",
+              "on_hold_time_in_minutes": {
+                "business": 0,
+                "calendar": 0
+              },
+              "reopens": 0,
+              "replies": 0,
+              "reply_time_in_minutes": {
+                "business": 0,
+                "calendar": 0
+              },
+              "reply_time_in_seconds": {
+                "calendar": 0
+              },
+              "requester_updated_at": "2020-07-20T06:21:26Z",
+              "requester_wait_time_in_minutes": {
+                "business": 0,
+                "calendar": 0
+              },
+              "solved_at": "2020-07-20T06:21:26Z",
+              "status_updated_at": "2020-07-20T06:21:26Z",
+              "ticket_id": 1511,
+              "updated_at": "2020-07-20T06:21:27Z",
+              "url": "https://example.zendesk.com/api/v2/ticket_metrics/34"
+            }
+          ]
+        }
+      },
+      "TicketRelatedInformationExample": {
+        "value": {
+          "followup_source_ids": [],
+          "from_archive": false,
+          "incidents": 7,
+          "jira_issue_ids": [],
+          "topic_id": null
+        }
+      },
+      "TicketResponseExample": {
+        "value": {
+          "ticket": {
+            "assignee_id": 235323,
+            "collaborator_ids": [
+              35334,
+              234
+            ],
+            "created_at": "2009-07-20T22:55:29Z",
+            "custom_fields": [
+              {
+                "id": 27642,
+                "value": "745"
+              },
+              {
+                "id": 27648,
+                "value": "yes"
+              }
+            ],
+            "custom_status_id": 123,
+            "description": "The fire is very colorful.",
+            "due_at": null,
+            "external_id": "ahg35h3jh",
+            "follower_ids": [
+              35334,
+              234
+            ],
+            "from_messaging_channel": false,
+            "generated_timestamp": 1304553600,
+            "group_id": 98738,
+            "has_incidents": false,
+            "id": 35436,
+            "organization_id": 509974,
+            "priority": "high",
+            "problem_id": 9873764,
+            "raw_subject": "{{dc.printer_on_fire}}",
+            "recipient": "support@company.com",
+            "requester_id": 20978392,
+            "satisfaction_rating": {
+              "comment": "Great support!",
+              "id": 1234,
+              "score": "good"
+            },
+            "sharing_agreement_ids": [
+              84432
+            ],
+            "status": "open",
+            "subject": "Help, my printer is on fire!",
+            "submitter_id": 76872,
+            "tags": [
+              "enterprise",
+              "other_tag"
+            ],
+            "type": "incident",
+            "updated_at": "2011-05-05T10:38:52Z",
+            "url": "https://company.zendesk.com/api/v2/tickets/35436",
+            "via": {
+              "channel": "web"
+            }
+          }
+        }
+      },
+      "TicketSkipResponseExample": {
+        "value": {
+          "skips": [
+            {
+              "created_at": "2015-09-30T21:44:03Z",
+              "id": 1,
+              "reason": "I have no idea.",
+              "ticket": {
+                "assignee_id": 235323,
+                "collaborator_ids": [
+                  35334,
+                  234
+                ],
+                "created_at": "2009-07-20T22:55:29Z",
+                "custom_fields": [
+                  {
+                    "id": 27642,
+                    "value": "745"
+                  },
+                  {
+                    "id": 27648,
+                    "value": "yes"
+                  }
+                ],
+                "description": "The fire is very colorful.",
+                "due_at": null,
+                "external_id": "ahg35h3jh",
+                "follower_ids": [
+                  35334,
+                  234
+                ],
+                "from_messaging_channel": false,
+                "generated_timestamp": 1304553600,
+                "group_id": 98738,
+                "has_incidents": false,
+                "id": 123,
+                "organization_id": 509974,
+                "priority": "high",
+                "problem_id": 9873764,
+                "raw_subject": "{{dc.printer_on_fire}}",
+                "recipient": "support@company.com",
+                "requester_id": 20978392,
+                "satisfaction_rating": {
+                  "comment": "Great support!",
+                  "id": 1234,
+                  "score": "good"
+                },
+                "sharing_agreement_ids": [
+                  84432
+                ],
+                "status": "open",
+                "subject": "Help, my printer is on fire!",
+                "submitter_id": 76872,
+                "tags": [
+                  "enterprise",
+                  "other_tag"
+                ],
+                "type": "incident",
+                "updated_at": "2011-05-05T10:38:52Z",
+                "url": "https://company.zendesk.com/api/v2/tickets/35436",
+                "via": {
+                  "channel": "web"
+                }
+              },
+              "ticket_id": 123,
+              "updated_at": "2015-09-30T21:44:03Z",
+              "user_id": 456
+            },
+            {
+              "created_at": "2015-10-01T21:44:03Z",
+              "id": 2,
+              "reason": "I am lost.",
+              "ticket": {
+                "assignee_id": 235323,
+                "collaborator_ids": [
+                  35334,
+                  234
+                ],
+                "created_at": "2009-07-20T22:55:29Z",
+                "custom_fields": [
+                  {
+                    "id": 27642,
+                    "value": "745"
+                  },
+                  {
+                    "id": 27648,
+                    "value": "yes"
+                  }
+                ],
+                "description": "The fire is very colorful.",
+                "due_at": null,
+                "external_id": "ahg35h3jh",
+                "follower_ids": [
+                  35334,
+                  234
+                ],
+                "from_messaging_channel": false,
+                "generated_timestamp": 1304553600,
+                "group_id": 98738,
+                "has_incidents": false,
+                "id": 321,
+                "organization_id": 509974,
+                "priority": "high",
+                "problem_id": 9873764,
+                "raw_subject": "{{dc.printer_on_fire}}",
+                "recipient": "support@company.com",
+                "requester_id": 20978392,
+                "satisfaction_rating": {
+                  "comment": "Great support!",
+                  "id": 1234,
+                  "score": "good"
+                },
+                "sharing_agreement_ids": [
+                  84432
+                ],
+                "status": "open",
+                "subject": "Help, my printer is on fire!",
+                "submitter_id": 76872,
+                "tags": [
+                  "enterprise",
+                  "other_tag"
+                ],
+                "type": "incident",
+                "updated_at": "2011-05-05T10:38:52Z",
+                "url": "https://company.zendesk.com/api/v2/tickets/35436",
+                "via": {
+                  "channel": "web"
+                }
+              },
+              "ticket_id": 321,
+              "updated_at": "2015-10-01T21:44:03Z",
+              "user_id": 654
+            }
+          ]
+        }
+      },
+      "TicketUpdateRequestExample": {
+        "value": {
+          "ticket": {
+            "comment": {
+              "body": "Thanks for choosing Acme Jet Motors.",
+              "public": true
+            },
+            "custom_status_id": 321,
+            "status": "solved"
+          }
+        }
+      },
+      "TicketUpdateResponseExample": {
+        "value": {
+          "audit": {
+            "events": [
+              {
+                "field_name": "subject",
+                "id": 206091192546,
+                "type": "Create",
+                "value": "My printer is on fire!"
+              },
+              {
+                "body": "The smoke is very colorful.",
+                "id": 206091192547,
+                "type": "Comment"
+              },
+              {
+                "field_name": "status",
+                "id": 206091192548,
+                "type": "Create",
+                "value": "open"
+              },
+              {
+                "field_name": "custom_status_id",
+                "id": 206091192549,
+                "type": "Create",
+                "value": 123
+              }
+            ]
+          },
+          "ticket": {
+            "custom_status_id": 123,
+            "id": 35436,
+            "requester_id": 123453,
+            "status": "open",
+            "subject": "My printer is on fire!"
+          }
+        }
+      },
+      "TicketsCreateRequestExample": {
+        "value": {
+          "tickets": [
+            {
+              "comment": {
+                "body": "The smoke is very colorful."
+              },
+              "priority": "urgent",
+              "subject": "My printer is on fire!"
+            },
+            {
+              "comment": {
+                "body": "This is a comment"
+              },
+              "priority": "normal",
+              "subject": "Help"
+            }
+          ]
+        }
+      },
+      "TicketsResponseExample": {
+        "value": {
+          "tickets": [
+            {
+              "assignee_id": 235323,
+              "collaborator_ids": [
+                35334,
+                234
+              ],
+              "created_at": "2009-07-20T22:55:29Z",
+              "custom_fields": [
+                {
+                  "id": 27642,
+                  "value": "745"
+                },
+                {
+                  "id": 27648,
+                  "value": "yes"
+                }
+              ],
+              "custom_status_id": 123,
+              "description": "The fire is very colorful.",
+              "due_at": null,
+              "external_id": "ahg35h3jh",
+              "follower_ids": [
+                35334,
+                234
+              ],
+              "from_messaging_channel": false,
+              "generated_timestamp": 1304553600,
+              "group_id": 98738,
+              "has_incidents": false,
+              "id": 35436,
+              "organization_id": 509974,
+              "priority": "high",
+              "problem_id": 9873764,
+              "raw_subject": "{{dc.printer_on_fire}}",
+              "recipient": "support@company.com",
+              "requester_id": 20978392,
+              "satisfaction_rating": {
+                "comment": "Great support!",
+                "id": 1234,
+                "score": "good"
+              },
+              "sharing_agreement_ids": [
+                84432
+              ],
+              "status": "open",
+              "subject": "Help, my printer is on fire!",
+              "submitter_id": 76872,
+              "tags": [
+                "enterprise",
+                "other_tag"
+              ],
+              "type": "incident",
+              "updated_at": "2011-05-05T10:38:52Z",
+              "url": "https://company.zendesk.com/api/v2/tickets/35436",
+              "via": {
+                "channel": "web"
+              }
+            }
+          ]
+        }
+      },
+      "TicketsUpdateRequestBatchUpdateExample": {
+        "summary": "Batch update - different changes to different tickets",
+        "description": "Updates each ticket with its own set of changes",
+        "value": {
+          "tickets": [
+            {
+              "id": 1,
+              "priority": "low",
+              "status": "solved"
+            },
+            {
+              "assignee_id": 12345,
+              "id": 2,
+              "status": "pending"
+            }
+          ]
+        }
+      },
+      "TicketsUpdateRequestBulkUpdateTagsExample": {
+        "summary": "Bulk update with tag management",
+        "description": "Add or remove tags without overwriting existing ones",
+        "value": {
+          "ticket": {
+            "additional_tags": [
+              "urgent",
+              "escalated"
+            ],
+            "remove_tags": [
+              "pending_review"
+            ]
+          }
+        }
+      },
+      "TicketsUpdateRequestDefaultExample": {
+        "summary": "Bulk update - same change to multiple tickets",
+        "description": "Updates all tickets specified in the ids query parameter with the same values",
+        "value": {
+          "ticket": {
+            "comment": {
+              "body": "This issue has been resolved"
+            },
+            "status": "solved"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "basicAuth": {
+        "type": "http",
+        "scheme": "basic"
+      }
+    }
+  },
+  "security": [
+    {
+      "basicAuth": []
+    }
+  ]
+}
