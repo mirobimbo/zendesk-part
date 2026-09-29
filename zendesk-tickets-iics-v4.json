@@ -1,0 +1,971 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Zendesk Tickets for IICS",
+    "version": "4.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://myown-66173.zendesk.com"
+    }
+  ],
+  "paths": {
+    "/api/v2/tickets": {
+      "get": {
+        "operationId": "ListTickets",
+        "summary": "List Tickets",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Page number (offset pagination). First page is 1.",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "description": "Number of records to return per page.\n\nNote: Default and maximum values vary by endpoint. Check endpoint-specific\ndocumentation for limits.\n",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List tickets",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/tickets?page[size]={page_size}": {
+      "get": {
+        "operationId": "ListTicketsFirstPage",
+        "summary": "List Tickets, first page (cursor pagination)",
+        "parameters": [
+          {
+            "name": "page_size",
+            "in": "path",
+            "required": true,
+            "description": "Sent as page[size]. Number of records per page (cursor pagination).",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List tickets",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketsCursorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/tickets?page[size]={page_size}&page[after]={page_after}": {
+      "get": {
+        "operationId": "ListTicketsNextPage",
+        "summary": "List Tickets, next page (cursor pagination)",
+        "parameters": [
+          {
+            "name": "page_size",
+            "in": "path",
+            "required": true,
+            "description": "Sent as page[size]. Number of records per page (cursor pagination).",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "page_after",
+            "in": "path",
+            "required": true,
+            "description": "Sent as page[after]. Use meta.after_cursor from the previous page.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List tickets",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketsCursorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/incremental/tickets/cursor": {
+      "get": {
+        "operationId": "IncrementalTicketExport",
+        "summary": "Incremental Ticket Export, Cursor Based",
+        "parameters": [
+          {
+            "name": "start_time",
+            "in": "query",
+            "description": "The time to start the incremental export from (Unix time). Must be at least one minute in the past. Required on the initial export request; not required on subsequent cursor-based pagination requests.",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "description": "The cursor pointer to work with for all subsequent exports after the initial request. Use after_cursor from the previous page.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "include",
+            "in": "query",
+            "description": "Sideloads to include, for example metric_sets.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncrementalTicketsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "TicketsResponse": {
+        "type": "object",
+        "properties": {
+          "tickets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TicketObject"
+            }
+          }
+        }
+      },
+      "TicketObject": {
+        "type": "object",
+        "properties": {
+          "allow_attachments": {
+            "type": "boolean"
+          },
+          "allow_channelback": {
+            "type": "boolean"
+          },
+          "assignee_id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "brand_id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "collaborator_ids": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          "comment": {
+            "$ref": "#/components/schemas/TicketCommentObject"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "custom_fields": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TicketFieldValueInput"
+            }
+          },
+          "custom_status_id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "description": {
+            "type": "string"
+          },
+          "due_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "email_cc_ids": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          "encoded_id": {
+            "type": "string"
+          },
+          "external_id": {
+            "type": "string"
+          },
+          "fields": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TicketFieldValueInput"
+            }
+          },
+          "follower_ids": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          "followup_ids": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          "forum_topic_id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "from_messaging_channel": {
+            "type": "boolean"
+          },
+          "generated_timestamp": {
+            "type": "integer"
+          },
+          "group_id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "has_incidents": {
+            "type": "boolean"
+          },
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "is_public": {
+            "type": "boolean"
+          },
+          "organization_id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "priority": {
+            "type": "string"
+          },
+          "problem_id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "raw_subject": {
+            "type": "string"
+          },
+          "recipient": {
+            "type": "string"
+          },
+          "requester_id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "satisfaction_probability": {
+            "type": "number"
+          },
+          "satisfaction_rating": {
+            "type": "object"
+          },
+          "sharing_agreement_ids": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          "status": {
+            "type": "string"
+          },
+          "subject": {
+            "type": "string"
+          },
+          "submitter_id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "support_type": {
+            "type": "string"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "ticket_form_id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "type": {
+            "type": "string"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "url": {
+            "type": "string"
+          },
+          "via": {
+            "$ref": "#/components/schemas/ViaObject"
+          }
+        }
+      },
+      "TicketCommentObject": {
+        "type": "object",
+        "properties": {
+          "add_short_url": {
+            "type": "boolean"
+          },
+          "attachments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AttachmentObject"
+            }
+          },
+          "audit_id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "author_id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "body": {
+            "type": "string"
+          },
+          "channel_back": {
+            "type": "string"
+          },
+          "channel_source_id": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "html_body": {
+            "type": "string"
+          },
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "metadata": {
+            "type": "object"
+          },
+          "plain_body": {
+            "type": "string"
+          },
+          "public": {
+            "type": "boolean"
+          },
+          "translate_to": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "uploads": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "via": {
+            "$ref": "#/components/schemas/TicketAuditViaObject"
+          }
+        }
+      },
+      "AttachmentObject": {
+        "type": "object",
+        "properties": {
+          "content_type": {
+            "type": "string"
+          },
+          "content_url": {
+            "type": "string"
+          },
+          "deleted": {
+            "type": "boolean"
+          },
+          "file_name": {
+            "type": "string"
+          },
+          "height": {
+            "type": "integer"
+          },
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "inline": {
+            "type": "boolean"
+          },
+          "malware_access_override": {
+            "type": "boolean"
+          },
+          "malware_scan_result": {
+            "type": "string"
+          },
+          "mapped_content_url": {
+            "type": "string"
+          },
+          "size": {
+            "type": "integer"
+          },
+          "url": {
+            "type": "string"
+          },
+          "width": {
+            "type": "integer"
+          },
+          "thumbnails": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AttachmentBaseObject"
+            }
+          }
+        }
+      },
+      "AttachmentBaseObject": {
+        "type": "object",
+        "properties": {
+          "content_type": {
+            "type": "string"
+          },
+          "content_url": {
+            "type": "string"
+          },
+          "deleted": {
+            "type": "boolean"
+          },
+          "file_name": {
+            "type": "string"
+          },
+          "height": {
+            "type": "integer"
+          },
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "inline": {
+            "type": "boolean"
+          },
+          "malware_access_override": {
+            "type": "boolean"
+          },
+          "malware_scan_result": {
+            "type": "string"
+          },
+          "mapped_content_url": {
+            "type": "string"
+          },
+          "size": {
+            "type": "integer"
+          },
+          "url": {
+            "type": "string"
+          },
+          "width": {
+            "type": "integer"
+          }
+        }
+      },
+      "TicketAuditViaObject": {
+        "type": "object",
+        "properties": {
+          "channel": {
+            "type": "string"
+          },
+          "source": {
+            "type": "object"
+          }
+        }
+      },
+      "TicketFieldValueInput": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "value": {
+            "type": "string"
+          }
+        }
+      },
+      "ViaObject": {
+        "type": "object",
+        "properties": {
+          "channel": {
+            "type": "string"
+          },
+          "source": {
+            "type": "object",
+            "properties": {
+              "from": {
+                "type": "object",
+                "properties": {
+                  "address": {
+                    "type": "string"
+                  },
+                  "id": {
+                    "type": "integer",
+                    "format": "int64"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "title": {
+                    "type": "string"
+                  }
+                }
+              },
+              "rel": {
+                "type": "string"
+              },
+              "to": {
+                "type": "object",
+                "properties": {
+                  "address": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "TicketsCursorResponse": {
+        "type": "object",
+        "properties": {
+          "tickets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TicketObject"
+            }
+          },
+          "meta": {
+            "type": "object",
+            "properties": {
+              "after_cursor": {
+                "type": "string"
+              },
+              "before_cursor": {
+                "type": "string"
+              },
+              "has_more": {
+                "type": "boolean"
+              }
+            }
+          },
+          "links": {
+            "type": "object",
+            "properties": {
+              "next": {
+                "type": "string"
+              },
+              "prev": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "TicketMetricObject": {
+        "type": "object",
+        "properties": {
+          "agent_wait_time_in_minutes": {
+            "type": "object",
+            "properties": {
+              "business": {
+                "type": "integer"
+              },
+              "calendar": {
+                "type": "integer"
+              }
+            }
+          },
+          "assigned_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "assignee_stations": {
+            "type": "integer"
+          },
+          "assignee_updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "custom_status_updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "first_resolution_time_in_minutes": {
+            "type": "object",
+            "properties": {
+              "business": {
+                "type": "integer"
+              },
+              "calendar": {
+                "type": "integer"
+              }
+            }
+          },
+          "full_resolution_time_in_minutes": {
+            "type": "object",
+            "properties": {
+              "business": {
+                "type": "integer"
+              },
+              "calendar": {
+                "type": "integer"
+              }
+            }
+          },
+          "group_stations": {
+            "type": "integer"
+          },
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "initially_assigned_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "latest_comment_added_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "on_hold_time_in_minutes": {
+            "type": "object",
+            "properties": {
+              "business": {
+                "type": "integer"
+              },
+              "calendar": {
+                "type": "integer"
+              }
+            }
+          },
+          "reopens": {
+            "type": "integer"
+          },
+          "replies": {
+            "type": "integer"
+          },
+          "reply_time_in_minutes": {
+            "type": "object",
+            "properties": {
+              "business": {
+                "type": "integer"
+              },
+              "calendar": {
+                "type": "integer"
+              }
+            }
+          },
+          "reply_time_in_seconds": {
+            "type": "object",
+            "properties": {
+              "business": {
+                "type": "integer"
+              },
+              "calendar": {
+                "type": "integer"
+              }
+            }
+          },
+          "requester_updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "requester_wait_time_in_minutes": {
+            "type": "object",
+            "properties": {
+              "business": {
+                "type": "integer"
+              },
+              "calendar": {
+                "type": "integer"
+              }
+            }
+          },
+          "solved_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status_updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "ticket_id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "url": {
+            "type": "string"
+          }
+        }
+      },
+      "IncrementalTicketsResponse": {
+        "type": "object",
+        "properties": {
+          "tickets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IncrementalTicketObject"
+            }
+          },
+          "after_cursor": {
+            "type": "string"
+          },
+          "after_url": {
+            "type": "string"
+          },
+          "before_cursor": {
+            "type": "string"
+          },
+          "before_url": {
+            "type": "string"
+          },
+          "end_of_stream": {
+            "type": "boolean"
+          }
+        }
+      },
+      "IncrementalTicketObject": {
+        "type": "object",
+        "properties": {
+          "allow_attachments": {
+            "type": "boolean"
+          },
+          "allow_channelback": {
+            "type": "boolean"
+          },
+          "assignee_id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "brand_id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "collaborator_ids": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          "comment": {
+            "$ref": "#/components/schemas/TicketCommentObject"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "custom_fields": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TicketFieldValueInput"
+            }
+          },
+          "custom_status_id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "description": {
+            "type": "string"
+          },
+          "due_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "email_cc_ids": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          "encoded_id": {
+            "type": "string"
+          },
+          "external_id": {
+            "type": "string"
+          },
+          "fields": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TicketFieldValueInput"
+            }
+          },
+          "follower_ids": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          "followup_ids": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          "forum_topic_id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "from_messaging_channel": {
+            "type": "boolean"
+          },
+          "generated_timestamp": {
+            "type": "integer"
+          },
+          "group_id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "has_incidents": {
+            "type": "boolean"
+          },
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "is_public": {
+            "type": "boolean"
+          },
+          "organization_id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "priority": {
+            "type": "string"
+          },
+          "problem_id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "raw_subject": {
+            "type": "string"
+          },
+          "recipient": {
+            "type": "string"
+          },
+          "requester_id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "satisfaction_probability": {
+            "type": "number"
+          },
+          "satisfaction_rating": {
+            "type": "object"
+          },
+          "sharing_agreement_ids": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          "status": {
+            "type": "string"
+          },
+          "subject": {
+            "type": "string"
+          },
+          "submitter_id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "support_type": {
+            "type": "string"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "ticket_form_id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "type": {
+            "type": "string"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "url": {
+            "type": "string"
+          },
+          "via": {
+            "$ref": "#/components/schemas/ViaObject"
+          },
+          "metric_set": {
+            "$ref": "#/components/schemas/TicketMetricObject"
+          }
+        }
+      }
+    }
+  }
+}
